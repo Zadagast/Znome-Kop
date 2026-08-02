@@ -35,41 +35,42 @@ def rnd(x, y, salt=0):
 
 
 def t_dust():
+    # Pallet-Town-style path: clean white with sparse 2px dash marks.
     c = Canvas(T, T, WHITE)
-    for y in range(T):
-        for x in range(T):
-            if rnd(x, y, 1) > 0.94:
-                c.set(x, y, BLACK)
+    for x, y in ((4, 5), (12, 12)):
+        c.set(x, y, BLACK)
+        c.set(x + 1, y, BLACK)
     return c
 
 
 def t_regolith():
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d12")
-    for y in range(T):
-        for x in range(T):
-            if rnd(x, y, 2) > 0.97:
-                c.set(x, y, BLACK)
+    for x, y in ((2, 3), (10, 6), (5, 12), (13, 13)):
+        c.set(x, y, BLACK)
+    c.hline(6, 7, 8, BLACK)
     return c
 
 
 def t_gravel():
+    # Outlined pebbles on white, comic-clean.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d12")
-    for i in range(7):
-        x = int(rnd(i, 0, 3) * (T - 3))
-        y = int(rnd(i, 1, 3) * (T - 2))
-        c.hline(x, x + 2, y, BLACK)
-        c.set(x + 1, y + 1, BLACK)
+    for i, (x, y) in enumerate(((1, 2), (8, 1), (12, 6), (3, 9), (9, 11))):
+        w = 3 + (i % 2)
+        c.hline(x + 1, x + w - 1, y, BLACK)
+        c.hline(x + 1, x + w - 1, y + 2, BLACK)
+        c.set(x, y + 1, BLACK)
+        c.set(x + w, y + 1, BLACK)
     return c
 
 
 def t_dunes():
+    # Clean wind ripples, no dither wash.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d25")
-    for y in (2, 7, 12):
-        for x in range(T):
-            c.set(x, y + (1 if (x // 3) % 2 else 0), BLACK)
+    for y in (3, 11):
+        for x in range(1, T - 1):
+            c.set(x, y + (1 if (x // 4) % 2 else 0), BLACK)
+    for x in range(5, 12):
+        c.set(x, 7, BLACK)
     return c
 
 
@@ -88,88 +89,101 @@ def t_grate():
     return c
 
 
+def tuft(c, x, y):
+    """A GB-grass style 5x3 tuft: two blades splaying from a base."""
+    c.set(x + 2, y, BLACK)
+    c.set(x + 1, y + 1, BLACK)
+    c.set(x + 3, y + 1, BLACK)
+    c.set(x, y + 2, BLACK)
+    c.set(x + 2, y + 2, BLACK)
+    c.set(x + 4, y + 2, BLACK)
+
+
 def t_sporegrass():
+    # Uniform tuft lattice like the Pokemon encounter-grass tile.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d12")
-    for i in range(6):
-        x = 1 + int(rnd(i, 5, 4) * (T - 3))
-        y = 3 + int(rnd(i, 9, 4) * (T - 8))
-        c.vline(x, y, y + 4, BLACK)
-        c.set(x - 1, y + 1, BLACK)
-        c.set(x + 1, y + 1, BLACK)
-        c.set(x, y - 1, BLACK)
+    for gy, offset in ((1, 0), (6, 5), (11, 0)):
+        for gx in range(offset, T - 4, 10):
+            tuft(c, gx, gy)
     return c
 
 
 def t_sporegrass_tall():
-    c = t_sporegrass()
-    for i in range(4):
-        x = 2 + int(rnd(i, 21, 6) * (T - 5))
-        c.vline(x, 2, 13, BLACK)
-        c.set(x + 1, 5, BLACK)
-        c.set(x - 1, 8, BLACK)
+    c = Canvas(T, T, WHITE)
+    for gy, offset in ((0, 0), (4, 5), (8, 0), (12, 5)):
+        for gx in range(offset, T - 4, 10):
+            tuft(c, gx, gy)
+    for x in (2, 12):
+        c.vline(x, 5, 10, BLACK)
     return c
 
 
 def t_coolant():
+    # GB water: light dither wash with clean wave dashes.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d50")
+    c.dither_rect(0, 0, T, T, "d12")
     for y in (3, 9):
-        for x in range(1, T - 1):
-            c.set(x, y + (1 if (x // 4) % 2 else 0), WHITE)
+        c.hline(2, 6, y, BLACK)
+        c.hline(9, 13, y + 1, BLACK)
+    c.hline(5, 9, 14, BLACK)
     return c
 
 
 def t_rock():
+    # A single outlined boulder filling the tile, faceted like GB mountain rock.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d50")
     c.outline_rect(0, 0, T, T, BLACK)
-    c.line(0, 5, 6, 10, BLACK)
-    c.line(6, 10, 15, 6, BLACK)
-    c.line(6, 10, 4, 15, BLACK)
-    c.line(11, 8, 12, 15, BLACK)
+    c.line(1, 5, 5, 1, BLACK)
+    c.line(10, 1, 14, 5, BLACK)
+    c.line(1, 10, 5, 14, BLACK)
+    c.line(10, 14, 14, 10, BLACK)
+    c.dither_rect(2, 10, 12, 4, "d25")
+    c.hline(5, 10, 7, BLACK)
     return c
 
 
 def t_cliff():
+    # Layered strata: dark cap, white face with staggered cracks.
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d75")
-    c.hline(0, T - 1, 0, BLACK)
-    for x in range(0, T, 4):
-        c.vline(x, 1, T - 1, BLACK)
-    c.hline(0, T - 1, 8, BLACK)
+    c.rect(0, 0, T, 2, BLACK)
+    c.hline(0, T - 1, 7, BLACK)
+    c.hline(0, T - 1, 15, BLACK)
+    for x in (5, 13):
+        c.vline(x, 2, 6, BLACK)
+    for x in (1, 9):
+        c.vline(x, 8, 14, BLACK)
     return c
 
 
 def t_crater():
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d12")
-    c.rect(3, 3, 10, 10, BLACK)
-    for x in range(2, 14):
-        c.set(x, 2, BLACK)
-        c.set(x, 13, BLACK)
-    c.dither_rect(4, 4, 8, 8, "d75")
+    c.outline_rect(2, 2, 12, 12, BLACK)
+    c.set(2, 2, WHITE)
+    c.set(13, 2, WHITE)
+    c.set(2, 13, WHITE)
+    c.set(13, 13, WHITE)
+    c.dither_rect(5, 5, 6, 6, "d75")
+    c.hline(4, 11, 12, BLACK)
     return c
 
 
 def t_tube():
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d50")
-    for i in range(5):
-        x = int(rnd(i, 3, 7) * (T - 2))
-        y = int(rnd(i, 8, 7) * (T - 2))
-        c.set(x, y, WHITE)
-        c.set(x + 1, y, WHITE)
+    c.dither_rect(0, 0, T, T, "d25")
+    for x, y in ((3, 3), (10, 7), (5, 12)):
+        c.hline(x, x + 2, y, BLACK)
+        c.set(x + 1, y + 1, BLACK)
     return c
 
 
 def t_ash():
     c = Canvas(T, T, WHITE)
-    c.dither_rect(0, 0, T, T, "d25")
-    for i in range(4):
-        x = int(rnd(i, 11, 8) * (T - 4))
-        y = int(rnd(i, 13, 8) * (T - 4))
-        c.hline(x, x + 3, y, BLACK)
+    for x, y in ((2, 3), (12, 2), (7, 7), (3, 12), (12, 12)):
+        c.set(x, y, BLACK)
+        c.set(x, y - 1, BLACK)
+        c.set(x - 1, y, BLACK)
+        c.set(x + 1, y, BLACK)
+        c.set(x, y + 1, BLACK)
     return c
 
 
@@ -346,21 +360,22 @@ def s_hab():
             dx = (x - w / 2 + 0.5) / (w / 2 - 1)
             dy = (y - 26) / 24.0
             if dx * dx + dy * dy <= 1.0:
-                c.set(x, y, dither_at(x, y, 0 if x < w * 0.55 else 4))
+                c.set(x, y, dither_at(x, y, 0 if x < w * 0.78 else 4))
     for y in range(0, 26):
         for x in range(w):
             if c.get(x, y) == CLEAR:
                 continue
             if CLEAR in (c.get(x - 1, y), c.get(x + 1, y), c.get(x, y - 1)):
                 c.set(x, y, BLACK)
-    for y in range(4, 24, 6):
+    for y in range(6, 24, 8):
         c.hline(6, w - 7, y, BLACK)
     # body
     panel(c, 2, 24, w - 4, h - 24)
-    rivets(c, 2, 24, w - 4, h - 24)
-    # windows
+    # windows: dark glass, white frame, GB-house style
     for wx in (8, w - 20):
-        panel(c, wx, 28, 12, 8, "d50")
+        c.rect(wx - 1, 27, 14, 10, WHITE)
+        panel(c, wx, 28, 12, 8, "d75")
+        c.hline(wx + 1, wx + 10, 31, WHITE)
     door(c, 2 * T, 32, T, 16)
     return c, {"w": 4, "h": 3, "doors": [(2, 2)]}
 
@@ -370,19 +385,21 @@ def s_lab():
     w, h = 5 * T, 4 * T
     c = Canvas(w, h)
     panel(c, 0, 20, w, h - 20)
-    rivets(c, 0, 20, w, h - 20, 8)
     # stepped upper dome
-    panel(c, 8, 8, w - 16, 16, "d25")
-    panel(c, 20, 0, w - 40, 10, "d50")
+    panel(c, 8, 8, w - 16, 16, "white")
+    for y in (12, 18):
+        c.hline(10, w - 11, y, BLACK)
+    panel(c, 20, 0, w - 40, 10, "d25")
     c.vline(w // 2, 0, 8, BLACK)
     c.hline(w // 2 - 4, w // 2 + 4, 0, BLACK)
-    # window band
-    panel(c, 6, 26, w - 12, 10, "d50")
-    for x in range(10, w - 10, 8):
-        c.vline(x, 26, 35, BLACK)
+    # window band: dark glass with mullions
+    panel(c, 6, 26, w - 12, 10, "d75")
+    for x in range(14, w - 10, 12):
+        c.vline(x, 26, 35, WHITE)
     door(c, 2 * T, 44, T, 20)
     for sx in (6, w - 12):
-        panel(c, sx, 40, 6, 20, "d25")
+        panel(c, sx, 40, 6, 20, "white")
+        c.hline(sx + 1, sx + 4, 50, BLACK)
     return c, {"w": 5, "h": 4, "doors": [(2, 3)]}
 
 

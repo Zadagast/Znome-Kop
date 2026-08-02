@@ -20,6 +20,19 @@ Hellas Colony  ->  Dust Flats  ->  Rust Canyon  ->  Lava Tubes  ->  Relay Statio
 | B | Open the pause menu (squad, Kodex, kit, save) | Cancel / back |
 | Crank | Survey scanner: bearing and range to nearby points of interest | – |
 
+## Play it
+
+The compiled bundle `ZnomeKop.pdx` is committed, so no SDK or build step is needed:
+
+```sh
+git pull
+open ZnomeKop.pdx            # macOS: opens in the Playdate Simulator
+PlaydateSimulator ZnomeKop.pdx   # Linux/Windows
+```
+
+For the device, zip the `ZnomeKop.pdx` folder and upload the zip at
+[play.date/account/sideload](https://play.date/account/sideload).
+
 ## Build
 
 Requires the [Playdate SDK](https://play.date/dev/) (`PLAYDATE_SDK_PATH`), plus `lua5.4`

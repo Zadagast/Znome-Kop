@@ -1,0 +1,9 @@
+name=Znome Kop
+author=Zadagast
+description=Catch, train and battle Znomes across procedurally generated Mars.
+bundleID=com.zadagast.znomekop
+version=0.1.0
+buildNumber=1
+imagePath=images/launcher
+pdxversion=30101
+buildtime=839016015

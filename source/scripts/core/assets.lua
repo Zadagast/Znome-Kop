@@ -24,3 +24,9 @@ function Assets.znomeImage(speciesId)
 	local def = Species.get(speciesId)
 	return Assets.znomes:getImage(Atlas.znomeSprite[def.sprite])
 end
+
+--- Idle-animation frame (1..Atlas.znomeFrames) for a species.
+function Assets.znomeFrame(speciesId, frame)
+	local def = Species.get(speciesId)
+	return Assets.znomes:getImage(Atlas.znomeSprite[def.sprite] + (frame - 1) % Atlas.znomeFrames)
+end

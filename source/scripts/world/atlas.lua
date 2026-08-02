@@ -169,17 +169,19 @@ Atlas.actors = {
 	tech = 17,
 }
 
+Atlas.znomeFrames = 4
+
 Atlas.znomeSprite = {
 	rubblin = 1,
-	cragnome = 2,
-	frostpod = 3,
-	cryonaut = 4,
-	sparklet = 5,
-	arcfang = 6,
-	tinplate = 7,
-	ferrox = 8,
-	mycomite = 9,
-	bloomshade = 10,
-	nullet = 11,
-	vantabeast = 12,
+	cragnome = 5,
+	frostpod = 9,
+	cryonaut = 13,
+	sparklet = 17,
+	arcfang = 21,
+	tinplate = 25,
+	ferrox = 29,
+	mycomite = 33,
+	bloomshade = 37,
+	nullet = 41,
+	vantabeast = 45,
 }

@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from art_actors import ACTORS
-from art_znomes import SIZE as ZNOME_SIZE, ZNOMES
+from art_znomes import FRAMES as ZNOME_FRAMES, SIZE as ZNOME_SIZE, ZNOMES
 from canvas import (
     BLACK, CLEAR, WHITE, Canvas, dither_at, from_ascii, from_png, write_sheet,
 )
@@ -540,9 +540,9 @@ def build_launcher(znome_frames):
     for i in range(0, 350, 40):
         card.line(i, 96, i + 18, 155, BLACK)
     card.outline_rect(0, 0, 350, 155, BLACK)
-    card.blit(znome_frames[0], 24, 72)
-    card.blit(znome_frames[4], 148, 74)
-    card.blit(znome_frames[11], 272, 70)
+    card.blit(znome_frames[0 * ZNOME_FRAMES], 18, 54)
+    card.blit(znome_frames[4 * ZNOME_FRAMES], 128, 56)
+    card.blit(znome_frames[11 * ZNOME_FRAMES], 244, 52)
     panel(card, 40, 16, 270, 34)
     write_sheet(os.path.join(out, "card.png"), [card], 1, 350, 155)
 
@@ -553,7 +553,7 @@ def build_launcher(znome_frames):
     img.convert("RGBA").save(os.path.join(out, "card.png"))
 
     icon = Canvas(32, 32, WHITE)
-    icon.blit(znome_frames[0], -12, -14)
+    icon.blit(znome_frames[0], -32, -58)
     icon.outline_rect(0, 0, 32, 32, BLACK)
     write_sheet(os.path.join(out, "icon.png"), [icon], 1, 32, 32)
 
@@ -566,10 +566,12 @@ def main():
     actor_frames, actor_order = build_actors()
     write_sheet(os.path.join(IMAGES, "actors-table-16-16.png"), actor_frames, 8, T, T)
 
-    znome_frames = [fn() for _, fn in ZNOMES]
+    znome_frames = []
+    for _, fn in ZNOMES:
+        znome_frames.extend(fn())
     write_sheet(
-        os.path.join(IMAGES, "znomes-table-56-56.png"),
-        znome_frames, 6, ZNOME_SIZE, ZNOME_SIZE,
+        os.path.join(IMAGES, "znomes-table-96-96.png"),
+        znome_frames, ZNOME_FRAMES, ZNOME_SIZE, ZNOME_SIZE,
     )
 
     build_launcher(znome_frames)
@@ -578,14 +580,14 @@ def main():
     atlas += "\nAtlas.actors = {\n"
     for name, base in actor_order:
         atlas += "\t%s = %d,\n" % (name, base)
-    atlas += "}\n\nAtlas.znomeSprite = {\n"
+    atlas += "}\n\nAtlas.znomeFrames = %d\n\nAtlas.znomeSprite = {\n" % ZNOME_FRAMES
     for i, (name, _) in enumerate(ZNOMES):
-        atlas += "\t%s = %d,\n" % (name, i + 1)
+        atlas += "\t%s = %d,\n" % (name, i * ZNOME_FRAMES + 1)
     atlas += "}\n"
     with open(os.path.join(ROOT, "source", "scripts", "world", "atlas.lua"), "w") as f:
         f.write(atlas)
 
-    print("tiles: %d  actors: %d  znomes: %d" % (
+    print("tiles: %d  actors: %d  znome frames: %d" % (
         len(frames), len(actor_frames), len(znome_frames)))
 
 

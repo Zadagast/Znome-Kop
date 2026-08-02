@@ -118,7 +118,7 @@ function PauseScene:drawSquad()
 	local sel = game.party[self.sub]
 	if sel then
 		local img = Assets.znomeImage(sel.species)
-		img:draw(316, 20)
+		img:draw(288, 12)
 		local def = Species.get(sel.species)
 		UI.text(Types.short[def.type] .. "  GRADE " .. sel.grade, 24, 208)
 		local names = {}
@@ -152,8 +152,8 @@ function PauseScene:drawKodex()
 	local id = Species.order[self.sub]
 	local def = Species.get(id)
 	if game.kodex.seen[id] then
-		Assets.znomeImage(id):draw(304, 44)
-		UI.text(Types.short[def.type], 304, 112)
+		Assets.znomeImage(id):draw(288, 44)
+		UI.text(Types.short[def.type], 312, 146)
 		UI.text(def.kodex, 24, 202)
 	else
 		UI.text("No field data recorded.", 24, 202)
@@ -228,14 +228,14 @@ function StarterScene:draw()
 	UI.text("SELECT A STASIS POD", 24, 16, true)
 	for i, id in ipairs(STARTERS) do
 		local x = 30 + (i - 1) * 124
-		UI.frame(x, 44, 108, 118)
-		Assets.znomeImage(id):draw(x + 26, 54)
+		UI.frame(x, 32, 108, 140)
+		Assets.znomeImage(id):draw(x + 6, 36)
 		local def = Species.get(id)
-		UI.text(def.name, x + 12, 128)
-		UI.text(Types.short[def.type], x + 12, 144)
+		UI.text(def.name, x + 12, 138)
+		UI.text(Types.short[def.type], x + 12, 154)
 		if i == self.index then
 			gfx.setLineWidth(3)
-			gfx.drawRect(x - 4, 40, 116, 126)
+			gfx.drawRect(x - 4, 28, 116, 148)
 			gfx.setLineWidth(1)
 		end
 	end
@@ -289,8 +289,8 @@ function TitleScene:draw()
 	UI.text("ZNOME KOP", 128, 42, true)
 	UI.text("MARS FIELD OPERATIONS", 112, 70)
 
-	Assets.znomeImage("rubblin"):draw(44, 156)
-	Assets.znomeImage("sparklet"):draw(300, 156)
+	Assets.znomeImage("rubblin"):draw(20, 128)
+	Assets.znomeImage("sparklet"):draw(284, 128)
 
 	UI.menu(150, 112, 100, self.items, self.index)
 end

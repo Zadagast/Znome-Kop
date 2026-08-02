@@ -26,6 +26,7 @@ function BattleScene.new(game, foe, opts)
 	self.moveIndex = 1
 	self.listIndex = 1
 	self.shake = 0
+	self.anim = 0
 	self.hpShown = {
 		player = self.battle.player.creature.hp,
 		foe = self.battle.foe.creature.hp,
@@ -130,6 +131,7 @@ end
 
 function BattleScene:update()
 	self:tweenHp()
+	self.anim = self.anim + 1
 	if self.shake > 0 then self.shake = self.shake - 1 end
 
 	if self.state == "events" then
@@ -232,10 +234,11 @@ function BattleScene:draw()
 	gfx.setColor(gfx.kColorBlack)
 
 	local shakeX = (self.shake > 0) and ((self.shake // 3) % 2 == 0 and 2 or -2) or 0
-	local foeImg = Assets.znomeImage(b.foe.creature.species)
-	foeImg:draw(264 + shakeX, 34)
-	local myImg = Assets.znomeImage(b.player.creature.species)
-	myImg:draw(56, 118)
+	local frame = (self.anim // 8) % Atlas.znomeFrames + 1
+	local foeImg = Assets.znomeFrame(b.foe.creature.species, frame)
+	foeImg:draw(272 + shakeX, 0)
+	local myImg = Assets.znomeFrame(b.player.creature.species, frame + 2)
+	myImg:draw(40, 80)
 
 	UI.statusPlate(8, 10, b.foe.creature, false, self.hpShown.foe)
 	UI.statusPlate(236, 108, b.player.creature, true, self.hpShown.player)

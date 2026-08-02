@@ -13,12 +13,11 @@ Hellas Colony  ->  Dust Flats  ->  Rust Canyon  ->  Lava Tubes  ->  Relay Statio
 
 ## Controls
 
-| Input | Overworld | Battle / menus |
+| Input | World | Battle / menus |
 | --- | --- | --- |
-| D-pad | Walk, tile by tile | Move the cursor |
-| A | Talk, read signs, open caches, cycle airlocks | Confirm |
+| D-pad | Walk left / right | Move the cursor |
+| A | Talk | Confirm |
 | B | Open the pause menu (squad, Kodex, kit, save) | Cancel / back |
-| Crank | Survey scanner: bearing and range to nearby points of interest | – |
 
 ## Play it
 
@@ -52,14 +51,14 @@ make preview SECTOR=3 SEED=42   # ASCII dump of a generated sector
 source/
   main.lua                 entry point, 30 fps scene loop
   pdxinfo
-  images/                  generated 1-bit sheets (tiles, actors, Znomes, launcher)
+  images/                  1-bit sheets (AI scenes + characters, Znomes, launcher)
   scripts/
     core/                  util, seeded RNG, UI chrome, asset loading, save
     data/                  types, moves, species, items, sector definitions
-    world/                 atlas (generated), map, mapgen, world loader, colony zone
-    game/                  creature, battle model, scenes, overworld, battle UI, menus
+    world/                 legacy top-down mapgen (kept for the test suite)
+    game/                  creature, battle model, scenes, side-scroller, battle UI, menus
 tests/                     headless harness + suite (runs under plain lua5.4)
-tools/                     art generator and the ASCII map previewer
+tools/                     art generators, AI art converter, ASCII map previewer
 ```
 
 Everything the game shows is data-driven: creatures, moves, type chart, items and the

@@ -18,16 +18,12 @@ import "scripts/data/items"
 import "scripts/data/sectors"
 
 import "scripts/world/atlas"
-import "scripts/world/map"
-import "scripts/world/mapgen"
-import "scripts/world/zones/colony"
-import "scripts/world/world"
 
 import "scripts/game/creature"
 import "scripts/game/battle"
 import "scripts/game/state"
 import "scripts/game/scenes"
-import "scripts/game/overworld"
+import "scripts/game/sidescroller"
 import "scripts/game/battlescene"
 import "scripts/game/menus"
 

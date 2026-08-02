@@ -108,9 +108,7 @@ function BattleScene:leaveBattle()
 	Scenes.pop()
 	if self.battle.result == "lose" then
 		game:healParty()
-		local key = "lab"
-		local map, x, y, dir = World.spawnFor(game, key, nil)
-		Scenes.current():enter(key, x, y, dir)
+		Scenes.current():enter("lab", 200)
 	end
 	Save.write(game)
 end

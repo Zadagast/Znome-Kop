@@ -273,8 +273,7 @@ function TitleScene:update()
 			Save.clear()
 			game = Game.new()
 		end
-		World.clear()
-		Scenes.replace(Overworld.new(game))
+		Scenes.replace(SideScroller.new(game))
 	end
 end
 

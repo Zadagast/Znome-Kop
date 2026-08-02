@@ -15,7 +15,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from art_actors import ACTORS
 from art_tiles import (
     GROUND_TILES, OBJECT_TILES, STRUCTURES, T, panel,
 )
@@ -30,7 +29,7 @@ PACK_ART = os.path.join(ROOT, "tools", "pack_art")
 
 
 def pack(name):
-    """Load a converted asset-pack element (see tools/convert_packs.py)."""
+    """Load a converted asset-pack element (legacy, unused)."""
     return from_png(os.path.join(PACK_ART, name + ".png"))
 
 
@@ -121,21 +120,6 @@ def scale2(c):
     return out
 
 
-def build_actors():
-    """Actor sheets from the GB Village pack (16px, scaled 2x to match the
-    32px world): down/up/side pairs, side faces left, right is the mirror."""
-    frames = []
-    order = []
-    for name in ("kop", "colonist", "tech"):
-        sheet = pack("actor_" + name)
-        arts = [scale2(sheet.sub(i * 16, 0, 16, 16)) for i in range(6)]
-        d0, d1, u0, u1, l0, l1 = arts
-        base = len(frames) + 1
-        frames.extend([d0, d1, u0, u1, l0, l1, l0.flip_h(), l1.flip_h()])
-        order.append((name, base))
-    return frames, order
-
-
 def build_launcher(znome_frames):
     """Launcher card (350x155) and icon (32x32), 1-bit like everything else."""
     from PIL import Image, ImageDraw, ImageFont
@@ -171,9 +155,6 @@ def main():
     frames, names, flags, structures = build_tiles()
     write_sheet(os.path.join(IMAGES, "tiles-table-32-32.png"), frames, 8, T, T)
 
-    actor_frames, actor_order = build_actors()
-    write_sheet(os.path.join(IMAGES, "actors-table-32-32.png"), actor_frames, 8, T, T)
-
     znome_frames = []
     for _, fn in ZNOMES:
         znome_frames.extend(fn())
@@ -185,18 +166,14 @@ def main():
     build_launcher(znome_frames)
 
     atlas = lua_atlas(names, flags, structures, len(frames))
-    atlas += "\nAtlas.actors = {\n"
-    for name, base in actor_order:
-        atlas += "\t%s = %d,\n" % (name, base)
-    atlas += "}\n\nAtlas.znomeFrames = %d\n\nAtlas.znomeSprite = {\n" % ZNOME_FRAMES
+    atlas += "\nAtlas.znomeFrames = %d\n\nAtlas.znomeSprite = {\n" % ZNOME_FRAMES
     for i, (name, _) in enumerate(ZNOMES):
         atlas += "\t%s = %d,\n" % (name, i * ZNOME_FRAMES + 1)
     atlas += "}\n"
     with open(os.path.join(ROOT, "source", "scripts", "world", "atlas.lua"), "w") as f:
         f.write(atlas)
 
-    print("tiles: %d  actors: %d  znome frames: %d" % (
-        len(frames), len(actor_frames), len(znome_frames)))
+    print("tiles: %d  znome frames: %d" % (len(frames), len(znome_frames)))
 
 
 if __name__ == "__main__":

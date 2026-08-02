@@ -5,7 +5,7 @@
 Save = {}
 
 Save.SLOT = "znomekop"
-Save.VERSION = 1
+Save.VERSION = 2
 
 function Save.serialise(game)
 	return {
@@ -15,10 +15,9 @@ function Save.serialise(game)
 		bag = game.bag,
 		kodex = game.kodex,
 		sector = game.sector,
-		mapKey = game.mapKey,
-		x = game.x,
-		y = game.y,
-		dir = game.dir,
+		room = game.room,
+		px = game.px,
+		face = game.face,
 		flags = game.flags,
 		steps = game.steps,
 		unlocked = game.unlocked,
@@ -39,8 +38,8 @@ function Save.read()
 end
 
 function Save.apply(game, data)
-	for _, key in ipairs({ "party", "box", "bag", "kodex", "sector", "mapKey",
-		"x", "y", "dir", "flags", "steps", "unlocked" }) do
+	for _, key in ipairs({ "party", "box", "bag", "kodex", "sector", "room",
+		"px", "face", "flags", "steps", "unlocked" }) do
 		if data[key] ~= nil then game[key] = data[key] end
 	end
 	for _, c in ipairs(game.party) do Creature.recalc(c) end

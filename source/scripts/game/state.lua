@@ -12,8 +12,9 @@ function Game.new()
 	self.bag = { pod = 5, repair = 3 }
 	self.kodex = { seen = {}, caught = {} }
 	self.sector = 1
-	self.mapKey = "colony"
-	self.x, self.y, self.dir = 12, 12, "down"
+	self.room = "lab"
+	self.px = 120
+	self.face = 1
 	self.flags = {}
 	self.unlocked = 1
 	self.steps = 0

@@ -193,12 +193,6 @@ Atlas.structures = {
 	},
 }
 
-Atlas.actors = {
-	kop = 1,
-	colonist = 9,
-	tech = 17,
-}
-
 Atlas.znomeFrames = 4
 
 Atlas.znomeSprite = {

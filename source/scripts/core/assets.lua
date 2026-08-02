@@ -4,20 +4,19 @@ local gfx <const> = playdate.graphics
 
 Assets = {}
 
+local SCENES <const> = { "lab", "colony", "flats", "canyon" }
+
 function Assets.load()
-	Assets.tiles = gfx.imagetable.new("images/tiles")
-	Assets.actors = gfx.imagetable.new("images/actors")
 	Assets.znomes = gfx.imagetable.new("images/znomes")
-	assert(Assets.tiles and Assets.actors and Assets.znomes, "missing image tables")
-end
-
---- Actor frames are laid out per actor: down0, down1, up0, up1, left0, left1,
---- right0, right1.
-local DIR_OFFSET = { down = 0, up = 2, left = 4, right = 6 }
-
-function Assets.actorFrame(spriteName, dir, step)
-	local base = Atlas.actors[spriteName] or Atlas.actors.colonist
-	return Assets.actors:getImage(base + DIR_OFFSET[dir] + (step % 2))
+	Assets.hero = gfx.imagetable.new("images/hero")
+	Assets.heroine = gfx.imagetable.new("images/heroine")
+	assert(Assets.znomes and Assets.hero and Assets.heroine, "missing image tables")
+	Assets.scenes = {}
+	for _, name in ipairs(SCENES) do
+		local img = gfx.image.new("images/scenes/scene-" .. name)
+		assert(img, "missing scene " .. name)
+		Assets.scenes[name] = img
+	end
 end
 
 function Assets.znomeImage(speciesId)

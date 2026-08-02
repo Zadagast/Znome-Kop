@@ -19,7 +19,7 @@ Requires Pillow.  Run: python3 tools/ai_convert.py
 
 import os
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "tools", "ai_raw")
@@ -58,8 +58,11 @@ def extract_sprite(cell, target_h):
     cwd, chg = x1 - x0 + 1, y1 - y0 + 1
     ph = target_h
     pw = max(1, round(cwd * ph / chg))
-    crop = cell.crop((x0, y0, x1 + 1, y1 + 1)).convert("L") \
-        .resize((pw, ph), Image.LANCZOS)
+    src = cell.crop((x0, y0, x1 + 1, y1 + 1)).convert("L")
+    crop = src.resize((pw, ph), Image.LANCZOS)
+    # min-filtered copy keeps 1-2px dark details (mouth, eyes) alive
+    # through the heavy downscale
+    dark = src.filter(ImageFilter.MinFilter(5)).resize((pw, ph), Image.LANCZOS)
     m = Image.new("L", (cwd, chg), 0)
     mp = m.load()
     for y in range(chg):
@@ -68,6 +71,7 @@ def extract_sprite(cell, target_h):
                 mp[x, y] = 255
     mm = m.resize((pw, ph), Image.LANCZOS).load()
     cp = crop.load()
+    dp = dark.load()
     mask = [[mm[x, y] > 127 for x in range(pw)] for y in range(ph)]
     spr = Image.new("RGBA", (pw + 2, ph + 2), (0, 0, 0, 0))
     sp = spr.load()
@@ -78,8 +82,9 @@ def extract_sprite(cell, target_h):
             edge = any(not (0 <= x + dx < pw and 0 <= y + dy < ph
                             and mask[y + dy][x + dx])
                        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+            black = cp[x, y] < BLACK or (cp[x, y] < 170 and dp[x, y] < 25)
             sp[x + 1, y + 1] = (0, 0, 0, 255) \
-                if (edge or cp[x, y] < BLACK) else (255, 255, 255, 255)
+                if (edge or black) else (255, 255, 255, 255)
     # 1px white halo so characters pop against dark backdrops
     pw2, ph2 = pw + 2, ph + 2
     halo = []

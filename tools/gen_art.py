@@ -1,0 +1,599 @@
+#!/usr/bin/env python3
+"""Generates every art asset plus the Lua tile atlas.
+
+    python3 tools/gen_art.py
+
+Outputs (all committed so the game builds without Python):
+    source/images/tiles-table-16-16.png
+    source/images/actors-table-16-16.png
+    source/images/znomes-table-32-32.png
+    source/scripts/world/atlas.lua
+"""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from art_actors import ACTORS
+from art_znomes import SIZE as ZNOME_SIZE, ZNOMES
+from canvas import BLACK, CLEAR, WHITE, Canvas, dither_at, from_ascii, write_sheet
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGES = os.path.join(ROOT, "source", "images")
+T = 16  # tile size
+
+
+def rnd(x, y, salt=0):
+    """Stable hash noise so tiles look scattered but regenerate identically."""
+    h = (x * 374761393 + y * 668265263 + salt * 2147483647) & 0xFFFFFFFF
+    h = (h ^ (h >> 13)) * 1274126177 & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65535.0
+
+
+# --- ground tiles --------------------------------------------------------
+
+
+def t_dust():
+    c = Canvas(T, T, WHITE)
+    for y in range(T):
+        for x in range(T):
+            if rnd(x, y, 1) > 0.94:
+                c.set(x, y, BLACK)
+    return c
+
+
+def t_regolith():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d12")
+    for y in range(T):
+        for x in range(T):
+            if rnd(x, y, 2) > 0.97:
+                c.set(x, y, BLACK)
+    return c
+
+
+def t_gravel():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d12")
+    for i in range(7):
+        x = int(rnd(i, 0, 3) * (T - 3))
+        y = int(rnd(i, 1, 3) * (T - 2))
+        c.hline(x, x + 2, y, BLACK)
+        c.set(x + 1, y + 1, BLACK)
+    return c
+
+
+def t_dunes():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d25")
+    for y in (2, 7, 12):
+        for x in range(T):
+            c.set(x, y + (1 if (x // 3) % 2 else 0), BLACK)
+    return c
+
+
+def t_plate():
+    c = Canvas(T, T, WHITE)
+    c.outline_rect(0, 0, T, T, BLACK)
+    for x, y in ((2, 2), (13, 2), (2, 13), (13, 13)):
+        c.set(x, y, BLACK)
+    return c
+
+
+def t_grate():
+    c = t_plate()
+    for y in range(4, 13, 3):
+        c.hline(4, 11, y, BLACK)
+    return c
+
+
+def t_sporegrass():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d12")
+    for i in range(6):
+        x = 1 + int(rnd(i, 5, 4) * (T - 3))
+        y = 3 + int(rnd(i, 9, 4) * (T - 8))
+        c.vline(x, y, y + 4, BLACK)
+        c.set(x - 1, y + 1, BLACK)
+        c.set(x + 1, y + 1, BLACK)
+        c.set(x, y - 1, BLACK)
+    return c
+
+
+def t_sporegrass_tall():
+    c = t_sporegrass()
+    for i in range(4):
+        x = 2 + int(rnd(i, 21, 6) * (T - 5))
+        c.vline(x, 2, 13, BLACK)
+        c.set(x + 1, 5, BLACK)
+        c.set(x - 1, 8, BLACK)
+    return c
+
+
+def t_coolant():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d50")
+    for y in (3, 9):
+        for x in range(1, T - 1):
+            c.set(x, y + (1 if (x // 4) % 2 else 0), WHITE)
+    return c
+
+
+def t_rock():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d50")
+    c.outline_rect(0, 0, T, T, BLACK)
+    c.line(0, 5, 6, 10, BLACK)
+    c.line(6, 10, 15, 6, BLACK)
+    c.line(6, 10, 4, 15, BLACK)
+    c.line(11, 8, 12, 15, BLACK)
+    return c
+
+
+def t_cliff():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d75")
+    c.hline(0, T - 1, 0, BLACK)
+    for x in range(0, T, 4):
+        c.vline(x, 1, T - 1, BLACK)
+    c.hline(0, T - 1, 8, BLACK)
+    return c
+
+
+def t_crater():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d12")
+    c.rect(3, 3, 10, 10, BLACK)
+    for x in range(2, 14):
+        c.set(x, 2, BLACK)
+        c.set(x, 13, BLACK)
+    c.dither_rect(4, 4, 8, 8, "d75")
+    return c
+
+
+def t_tube():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d50")
+    for i in range(5):
+        x = int(rnd(i, 3, 7) * (T - 2))
+        y = int(rnd(i, 8, 7) * (T - 2))
+        c.set(x, y, WHITE)
+        c.set(x + 1, y, WHITE)
+    return c
+
+
+def t_ash():
+    c = Canvas(T, T, WHITE)
+    c.dither_rect(0, 0, T, T, "d25")
+    for i in range(4):
+        x = int(rnd(i, 11, 8) * (T - 4))
+        y = int(rnd(i, 13, 8) * (T - 4))
+        c.hline(x, x + 3, y, BLACK)
+    return c
+
+
+# --- object tiles (transparent background) -------------------------------
+
+
+def o_boulder():
+    c = Canvas(T, T)
+    for y in range(3, 15):
+        for x in range(1, 15):
+            dx, dy = (x - 8) / 7.0, (y - 9.5) / 6.0
+            if dx * dx + dy * dy <= 1.0:
+                c.set(x, y, dither_at(x, y, 0 if y < 9 else 4))
+    for y in range(3, 15):
+        for x in range(1, 15):
+            if c.get(x, y) == CLEAR:
+                continue
+            if CLEAR in (c.get(x - 1, y), c.get(x + 1, y), c.get(x, y - 1), c.get(x, y + 1)):
+                c.set(x, y, BLACK)
+    c.line(5, 8, 9, 11, BLACK)
+    return c
+
+
+def o_fence_h():
+    c = Canvas(T, T)
+    c.hline(0, T - 1, 6, BLACK)
+    c.hline(0, T - 1, 10, BLACK)
+    c.vline(3, 4, 14, BLACK)
+    c.vline(12, 4, 14, BLACK)
+    return c
+
+
+def o_fence_v():
+    c = Canvas(T, T)
+    c.vline(6, 0, T - 1, BLACK)
+    c.vline(10, 0, T - 1, BLACK)
+    c.hline(4, 12, 4, BLACK)
+    c.hline(4, 12, 12, BLACK)
+    return c
+
+
+def o_sign():
+    c = Canvas(T, T)
+    c.rect(2, 3, 12, 8, WHITE)
+    c.outline_rect(2, 3, 12, 8, BLACK)
+    c.hline(4, 11, 6, BLACK)
+    c.hline(4, 9, 8, BLACK)
+    c.rect(7, 11, 2, 4, BLACK)
+    return c
+
+
+def o_crate():
+    c = Canvas(T, T)
+    c.rect(2, 4, 12, 11, WHITE)
+    c.outline_rect(2, 4, 12, 11, BLACK)
+    c.line(2, 4, 13, 14, BLACK)
+    c.line(13, 4, 2, 14, BLACK)
+    return c
+
+
+def o_pipe_h():
+    c = Canvas(T, T)
+    c.rect(0, 5, T, 6, WHITE)
+    c.hline(0, T - 1, 5, BLACK)
+    c.hline(0, T - 1, 10, BLACK)
+    c.vline(4, 5, 10, BLACK)
+    c.vline(11, 5, 10, BLACK)
+    return c
+
+
+def o_pipe_v():
+    c = Canvas(T, T)
+    c.rect(5, 0, 6, T, WHITE)
+    c.vline(5, 0, T - 1, BLACK)
+    c.vline(10, 0, T - 1, BLACK)
+    c.hline(5, 10, 4, BLACK)
+    c.hline(5, 10, 11, BLACK)
+    return c
+
+
+def o_lichen():
+    c = Canvas(T, T)
+    for i in range(5):
+        x = 2 + int(rnd(i, 17, 9) * 11)
+        y = 4 + int(rnd(i, 19, 9) * 9)
+        c.set(x, y, BLACK)
+        c.set(x + 1, y + 1, BLACK)
+        c.set(x - 1, y + 1, BLACK)
+    return c
+
+
+def o_vent():
+    c = Canvas(T, T)
+    c.rect(3, 6, 10, 8, WHITE)
+    c.outline_rect(3, 6, 10, 8, BLACK)
+    for y in (8, 10, 12):
+        c.hline(5, 10, y, BLACK)
+    c.set(7, 3, BLACK)
+    c.set(9, 1, BLACK)
+    return c
+
+
+def o_marker():
+    c = Canvas(T, T)
+    c.vline(8, 4, 15, BLACK)
+    c.rect(9, 4, 5, 4, WHITE)
+    c.outline_rect(8, 4, 6, 5, BLACK)
+    return c
+
+
+GROUND_TILES = [
+    ("dust", t_dust, {}),
+    ("regolith", t_regolith, {}),
+    ("gravel", t_gravel, {}),
+    ("dunes", t_dunes, {}),
+    ("plate", t_plate, {}),
+    ("grate", t_grate, {}),
+    ("sporegrass", t_sporegrass, {"encounter": True}),
+    ("sporegrass_tall", t_sporegrass_tall, {"encounter": True}),
+    ("coolant", t_coolant, {"solid": True}),
+    ("rock", t_rock, {"solid": True}),
+    ("cliff", t_cliff, {"solid": True}),
+    ("crater", t_crater, {"solid": True}),
+    ("tube", t_tube, {}),
+    ("ash", t_ash, {"encounter": True}),
+]
+
+OBJECT_TILES = [
+    ("boulder", o_boulder, {"solid": True}),
+    ("fence_h", o_fence_h, {"solid": True}),
+    ("fence_v", o_fence_v, {"solid": True}),
+    ("sign", o_sign, {"solid": True}),
+    ("crate", o_crate, {"solid": True}),
+    ("pipe_h", o_pipe_h, {"solid": True}),
+    ("pipe_v", o_pipe_v, {"solid": True}),
+    ("lichen", o_lichen, {}),
+    ("vent", o_vent, {"solid": True}),
+    ("marker", o_marker, {"solid": True}),
+]
+
+
+# --- structures ----------------------------------------------------------
+
+
+def panel(c, x, y, w, h, density="white"):
+    c.dither_rect(x, y, w, h, density)
+    c.outline_rect(x, y, w, h, BLACK)
+
+
+def rivets(c, x, y, w, h, step=6):
+    for yy in range(y + 2, y + h - 1, step):
+        for xx in range(x + 2, x + w - 1, step):
+            c.set(xx, yy, BLACK)
+
+
+def door(c, x, y, w=T, h=None):
+    """Airlock doorway; the tile under it is the walkable entrance."""
+    h = h or T
+    c.rect(x, y, w, h, WHITE)
+    c.outline_rect(x, y, w, h, BLACK)
+    c.dither_rect(x + 3, y + 2, w - 6, h - 4, "d50")
+    c.outline_rect(x + 3, y + 2, w - 6, h - 4, BLACK)
+    c.vline(x + w // 2, y + 3, y + h - 4, BLACK)
+    c.hline(x + 4, x + w - 5, y + h // 2, BLACK)
+
+
+def s_hab():
+    """4x3 tile colony habitat with a domed roof and one airlock."""
+    w, h = 4 * T, 3 * T
+    c = Canvas(w, h)
+    # dome roof
+    for y in range(0, 26):
+        for x in range(0, w):
+            dx = (x - w / 2 + 0.5) / (w / 2 - 1)
+            dy = (y - 26) / 24.0
+            if dx * dx + dy * dy <= 1.0:
+                c.set(x, y, dither_at(x, y, 0 if x < w * 0.55 else 4))
+    for y in range(0, 26):
+        for x in range(w):
+            if c.get(x, y) == CLEAR:
+                continue
+            if CLEAR in (c.get(x - 1, y), c.get(x + 1, y), c.get(x, y - 1)):
+                c.set(x, y, BLACK)
+    for y in range(4, 24, 6):
+        c.hline(6, w - 7, y, BLACK)
+    # body
+    panel(c, 2, 24, w - 4, h - 24)
+    rivets(c, 2, 24, w - 4, h - 24)
+    # windows
+    for wx in (8, w - 20):
+        panel(c, wx, 28, 12, 8, "d50")
+    door(c, 2 * T, 32, T, 16)
+    return c, {"w": 4, "h": 3, "doors": [(2, 2)]}
+
+
+def s_lab():
+    """5x4 tile research outpost (the colony's Znome Lab)."""
+    w, h = 5 * T, 4 * T
+    c = Canvas(w, h)
+    panel(c, 0, 20, w, h - 20)
+    rivets(c, 0, 20, w, h - 20, 8)
+    # stepped upper dome
+    panel(c, 8, 8, w - 16, 16, "d25")
+    panel(c, 20, 0, w - 40, 10, "d50")
+    c.vline(w // 2, 0, 8, BLACK)
+    c.hline(w // 2 - 4, w // 2 + 4, 0, BLACK)
+    # window band
+    panel(c, 6, 26, w - 12, 10, "d50")
+    for x in range(10, w - 10, 8):
+        c.vline(x, 26, 35, BLACK)
+    door(c, 2 * T, 44, T, 20)
+    for sx in (6, w - 12):
+        panel(c, sx, 40, 6, 20, "d25")
+    return c, {"w": 5, "h": 4, "doors": [(2, 3)]}
+
+
+def s_gate():
+    """3x2 perimeter airlock; the middle bottom tile is the zone exit."""
+    w, h = 3 * T, 2 * T
+    c = Canvas(w, h)
+    panel(c, 0, 0, T, h, "d50")
+    panel(c, 2 * T, 0, T, h, "d50")
+    rivets(c, 0, 0, T, h)
+    rivets(c, 2 * T, 0, T, h)
+    c.rect(T, 0, T, h, WHITE)
+    c.hline(T, 2 * T - 1, 0, BLACK)
+    for y in range(4, h, 6):
+        c.hline(T + 2, 2 * T - 3, y, BLACK)
+    return c, {"w": 3, "h": 2, "doors": [(1, 1)]}
+
+
+def s_solar():
+    w, h = 2 * T, 2 * T
+    c = Canvas(w, h)
+    panel(c, 1, 2, w - 2, 18, "d25")
+    for x in range(5, w - 2, 5):
+        c.vline(x, 3, 19, BLACK)
+    c.hline(2, w - 3, 11, BLACK)
+    c.vline(w // 2, 20, h - 2, BLACK)
+    c.hline(w // 2 - 4, w // 2 + 4, h - 2, BLACK)
+    return c, {"w": 2, "h": 2, "doors": []}
+
+
+def s_tank():
+    w, h = 2 * T, 2 * T
+    c = Canvas(w, h)
+    for y in range(2, h - 2):
+        for x in range(2, w - 2):
+            dx = (x - w / 2 + 0.5) / (w / 2 - 3)
+            if abs(dx) <= 1.0:
+                c.set(x, y, dither_at(x, y, 0 if x < w * 0.5 else 6))
+    c.outline_rect(2, 2, w - 4, h - 4, BLACK)
+    for y in range(6, h - 4, 8):
+        c.hline(3, w - 4, y, BLACK)
+    return c, {"w": 2, "h": 2, "doors": []}
+
+
+def s_tower():
+    w, h = 2 * T, 3 * T
+    c = Canvas(w, h)
+    c.line(4, h - 1, w // 2 - 1, 4, BLACK)
+    c.line(w - 5, h - 1, w // 2, 4, BLACK)
+    for y in range(8, h - 2, 6):
+        c.hline(4 + (y - 8) // 6, w - 5 - (y - 8) // 6, y, BLACK)
+    c.rect(w // 2 - 5, 0, 10, 5, WHITE)
+    c.outline_rect(w // 2 - 5, 0, 10, 5, BLACK)
+    c.dither_rect(w // 2 - 3, 1, 6, 3, "d50")
+    return c, {"w": 2, "h": 3, "doors": []}
+
+
+STRUCTURES = [
+    ("hab", s_hab),
+    ("lab", s_lab),
+    ("gate", s_gate),
+    ("solar", s_solar),
+    ("tank", s_tank),
+    ("tower", s_tower),
+]
+
+
+# --- build ---------------------------------------------------------------
+
+
+def build_tiles():
+    frames, names, flags, structures = [], {}, {}, {}
+
+    def add(name, canvas, props):
+        frames.append(canvas)
+        idx = len(frames)  # image tables are 1-based
+        names[name] = idx
+        if props:
+            flags[idx] = props
+        return idx
+
+    for name, fn, props in GROUND_TILES:
+        add(name, fn(), props)
+    for name, fn, props in OBJECT_TILES:
+        add(name, fn(), props)
+
+    for name, fn in STRUCTURES:
+        canvas, meta = fn()
+        grid, solid = [], []
+        for ty in range(meta["h"]):
+            for tx in range(meta["w"]):
+                cell = canvas.sub(tx * T, ty * T, T, T)
+                is_door = (tx, ty) in meta["doors"]
+                idx = 0 if cell.is_blank() else add(
+                    "%s_%d_%d" % (name, tx, ty), cell, {"solid": not is_door}
+                )
+                grid.append(idx)
+                solid.append(0 if (is_door or idx == 0) else 1)
+        structures[name] = {
+            "w": meta["w"],
+            "h": meta["h"],
+            "tiles": grid,
+            "solid": solid,
+            "doors": meta["doors"],
+        }
+    return frames, names, flags, structures
+
+
+def lua_atlas(names, flags, structures, count):
+    out = ["-- Generated by tools/gen_art.py. Do not edit by hand.", "", "Atlas = {}", ""]
+    out.append("Atlas.count = %d" % count)
+    out.append("")
+    out.append("Atlas.tile = {")
+    for name in sorted(names):
+        out.append("\t%s = %d," % (name, names[name]))
+    out.append("}")
+    out.append("")
+    for prop in ("solid", "encounter"):
+        out.append("Atlas.%s = {" % prop)
+        for idx in sorted(i for i, p in flags.items() if p.get(prop)):
+            out.append("\t[%d] = true," % idx)
+        out.append("}")
+        out.append("")
+    out.append("Atlas.structures = {")
+    for name in sorted(structures):
+        s = structures[name]
+        out.append("\t%s = {" % name)
+        out.append("\t\tw = %d, h = %d," % (s["w"], s["h"]))
+        out.append("\t\ttiles = { %s }," % ", ".join(str(v) for v in s["tiles"]))
+        out.append("\t\tsolid = { %s }," % ", ".join(str(v) for v in s["solid"]))
+        doors = ", ".join("{ x = %d, y = %d }" % (d[0], d[1]) for d in s["doors"])
+        out.append("\t\tdoors = { %s }," % doors)
+        out.append("\t},")
+    out.append("}")
+    out.append("")
+    return "\n".join(out)
+
+
+def build_actors():
+    frames = []
+    order = []
+    for name in ("kop", "colonist", "tech"):
+        d0, d1, u0, u1, r0, r1 = ACTORS[name]
+        arts = [from_ascii(a) for a in (d0, d1, u0, u1, r0, r1)]
+        left = [arts[4].flip_h(), arts[5].flip_h()]
+        base = len(frames) + 1
+        frames.extend(arts[:4] + left + arts[4:6])
+        order.append((name, base))
+    return frames, order
+
+
+def build_launcher(znome_frames):
+    """Launcher card (350x155) and icon (32x32), 1-bit like everything else."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    out = os.path.join(IMAGES, "launcher")
+    os.makedirs(out, exist_ok=True)
+
+    card = Canvas(350, 155, WHITE)
+    card.dither_rect(0, 96, 350, 59, "d25")
+    for i in range(0, 350, 40):
+        card.line(i, 96, i + 18, 155, BLACK)
+    card.outline_rect(0, 0, 350, 155, BLACK)
+    card.blit(znome_frames[0], 24, 60)
+    card.blit(znome_frames[4], 150, 62)
+    card.blit(znome_frames[11], 276, 58)
+    panel(card, 40, 16, 270, 34)
+    write_sheet(os.path.join(out, "card.png"), [card], 1, 350, 155)
+
+    img = Image.open(os.path.join(out, "card.png")).convert("RGB")
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    draw.text((150, 28), "ZNOME KOP", fill=(0, 0, 0), font=font)
+    img.convert("RGBA").save(os.path.join(out, "card.png"))
+
+    icon = Canvas(32, 32, WHITE)
+    icon.outline_rect(0, 0, 32, 32, BLACK)
+    icon.blit(znome_frames[0], 0, 0)
+    write_sheet(os.path.join(out, "icon.png"), [icon], 1, 32, 32)
+
+
+def main():
+    os.makedirs(IMAGES, exist_ok=True)
+    frames, names, flags, structures = build_tiles()
+    write_sheet(os.path.join(IMAGES, "tiles-table-16-16.png"), frames, 8, T, T)
+
+    actor_frames, actor_order = build_actors()
+    write_sheet(os.path.join(IMAGES, "actors-table-16-16.png"), actor_frames, 8, T, T)
+
+    znome_frames = [fn() for _, fn in ZNOMES]
+    write_sheet(
+        os.path.join(IMAGES, "znomes-table-32-32.png"),
+        znome_frames, 6, ZNOME_SIZE, ZNOME_SIZE,
+    )
+
+    build_launcher(znome_frames)
+
+    atlas = lua_atlas(names, flags, structures, len(frames))
+    atlas += "\nAtlas.actors = {\n"
+    for name, base in actor_order:
+        atlas += "\t%s = %d,\n" % (name, base)
+    atlas += "}\n\nAtlas.znomeSprite = {\n"
+    for i, (name, _) in enumerate(ZNOMES):
+        atlas += "\t%s = %d,\n" % (name, i + 1)
+    atlas += "}\n"
+    with open(os.path.join(ROOT, "source", "scripts", "world", "atlas.lua"), "w") as f:
+        f.write(atlas)
+
+    print("tiles: %d  actors: %d  znomes: %d" % (
+        len(frames), len(actor_frames), len(znome_frames)))
+
+
+if __name__ == "__main__":
+    main()

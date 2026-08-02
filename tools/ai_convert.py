@@ -47,6 +47,11 @@ def extract_sprite(cell, target_h):
     w, h = cell.size
     fg = [[not (p[x, y][0] > 150 and p[x, y][2] > 150 and p[x, y][1] < 120)
            for x in range(w)] for y in range(h)]
+    # drop ground/baseline rows the model sometimes draws across the cell
+    for y in range(h):
+        if sum(fg[y]) > w * 0.6:
+            fg[y] = [False] * w
+    keep_largest_component(fg, w, h)
     xs = [x for y in range(h) for x in range(w) if fg[y][x]]
     ys = [y for y in range(h) for x in range(w) if fg[y][x]]
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -88,6 +93,35 @@ def extract_sprite(cell, target_h):
     for x, y in halo:
         sp[x, y] = (255, 255, 255, 255)
     return spr
+
+
+def keep_largest_component(fg, w, h):
+    """Erase everything but the biggest connected foreground blob (stray
+    props, ground bumps)."""
+    seen = [[False] * w for _ in range(h)]
+    best = []
+    for sy in range(h):
+        for sx in range(w):
+            if fg[sy][sx] and not seen[sy][sx]:
+                comp = []
+                stack = [(sx, sy)]
+                seen[sy][sx] = True
+                while stack:
+                    x, y = stack.pop()
+                    comp.append((x, y))
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < w and 0 <= ny < h and fg[ny][nx] \
+                                and not seen[ny][nx]:
+                            seen[ny][nx] = True
+                            stack.append((nx, ny))
+                if len(comp) > len(best):
+                    best = comp
+    keep = set(best)
+    for y in range(h):
+        for x in range(w):
+            if fg[y][x] and (x, y) not in keep:
+                fg[y][x] = False
 
 
 def sheet(frames, name):

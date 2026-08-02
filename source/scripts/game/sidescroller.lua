@@ -261,9 +261,12 @@ end
 
 -- --- draw ------------------------------------------------------------------
 
+--- Walk cycle ping-pongs contact/passing/contact/passing: 2,3,4,3.
+local WALK <const> = { 2, 3, 4, 3 }
+
 local function heroFrame(moving, t)
 	if not moving then return 1 end
-	return 2 + (t // 5) % 3
+	return WALK[(t // 5) % 4 + 1]
 end
 
 function SideScroller:draw()

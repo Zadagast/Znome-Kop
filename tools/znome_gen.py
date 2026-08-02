@@ -16,7 +16,7 @@ reduced to luminance and rendered as an ordered-dither 1-bit pattern.
 import math
 import random
 
-from canvas import BLACK, WHITE, Canvas, dither_at
+from canvas import BLACK, CLEAR, WHITE, Canvas, dither_at
 
 SIZE = 32
 
@@ -68,12 +68,12 @@ class FractalNoise:
 
 # --- MapGenerator.gd
 
-def _generate_new(rng, w, h):
+def _generate_new(rng, w, h, fill=0.48, walks=2, walk_len=100):
     grid = [[False] * h for _ in range(w)]  # map[x][y] like the original
     for x in range(int(math.ceil(w * 0.5))):
         col = []
         for y in range(h):
-            v = rng.uniform(0.0, 1.0) > 0.48
+            v = rng.uniform(0.0, 1.0) > fill
             to_center = abs(y - h * 0.5) * 2.0 / h
             if x in (w // 2 - 1, w // 2 - 2):
                 if rng.uniform(0.0, 0.4) > to_center:
@@ -81,14 +81,14 @@ def _generate_new(rng, w, h):
             col.append(v)
         grid[x] = col[:]
         grid[w - x - 1] = col[:]
-    for _ in range(2):
-        _random_walk(rng, w, h, grid)
+    for _ in range(walks):
+        _random_walk(rng, w, h, grid, walk_len)
     return grid
 
 
-def _random_walk(rng, w, h, grid):
+def _random_walk(rng, w, h, grid, walk_len=100):
     x, y = rng.randrange(w), rng.randrange(h)
-    for _ in range(100):
+    for _ in range(walk_len):
         if 0 <= x < w and 0 <= y < h:
             grid[x][y] = True
             grid[w - x - 1][y] = True
@@ -98,8 +98,8 @@ def _random_walk(rng, w, h, grid):
 
 # --- CellularAutomata.gd
 
-def _do_steps(grid, w, h):
-    for _ in range(N_STEPS):
+def _do_steps(grid, w, h, steps=N_STEPS):
+    for _ in range(steps):
         grid = _step(grid, w, h)
     return grid
 
@@ -270,13 +270,20 @@ def _touching(g1, g2):
     return False
 
 
-def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True):
+def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
+               h=None, fill=0.48, walks=2, walk_len=100, ca_steps=N_STEPS,
+               eyes=None):
     """Returns list of ((x, y), color) cells; color is an rgb tuple,
-    'outline', or ('eye', rgb) for darkened eye-centre cells."""
+    'outline', or ('eye', rgb) for darkened eye-centre cells.
+
+    Defaults reproduce Deep-Fold's generator; the keyword knobs (grid
+    shape, fill density, walk count/length, CA steps, forced eyes) only
+    retune its parameters for more alien results."""
     rng = random.Random(seed)
-    w = h = size
-    grid = _generate_new(rng, w, h)
-    grid = _do_steps(grid, w, h)
+    w = w or size
+    h = h or size
+    grid = _generate_new(rng, w, h, fill, walks, walk_len)
+    grid = _do_steps(grid, w, h, ca_steps)
     scheme = _generate_new_colorscheme(rng, n_colors)
     eye_scheme = _generate_new_colorscheme(rng, n_colors)
     groups, negative_groups = _fill_colors(
@@ -297,7 +304,10 @@ def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True):
             continue
         if not any(_touching(g["arr"], g2["arr"]) for g2 in kept):
             continue
-        is_eye = (len(g["arr"]) + len(negative_groups)) % 5 >= 3
+        if eyes is None:
+            is_eye = (len(g["arr"]) + len(negative_groups)) % 5 >= 3
+        else:
+            is_eye = eyes
         cells.extend(g["arr"])
         if is_eye:
             pts = [p for (p, _c) in g["arr"]]
@@ -310,14 +320,63 @@ def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True):
     return cells
 
 
-def generate(seed, size=30):
+def _proper_eyes(c):
+    """Stamp two symmetric, readable eyes (white sclera + dark pupil)
+    into the head region of the rendered sprite."""
+    body_rows = {}
+    for y in range(SIZE):
+        xs = [x for x in range(SIZE) if c.get(x, y) != CLEAR]
+        if xs:
+            body_rows[y] = (min(xs), max(xs))
+    if not body_rows:
+        return
+    ys = sorted(body_rows)
+    top, bottom = ys[0], ys[-1]
+    target = top + max(2, (bottom - top) * 25 // 100)
+    for y in range(target, min(bottom - 4, target + 10)):
+        if y not in body_rows or y + 3 not in body_rows:
+            continue
+        x0, x1 = body_rows[y]
+        span = x1 - x0
+        if span < 9:
+            continue
+        cx = (x0 + x1) / 2.0
+        off = max(3, span // 5 + 1)
+        lx = int(cx - off) - 1
+        rx = int(cx + off) - 2
+        if lx < x0 or rx + 3 > x1:
+            off = span // 4
+            lx = int(cx - off) - 1
+            rx = int(cx + off) - 2
+            if lx < x0 or rx + 3 > x1:
+                continue
+        for ex in (lx, rx):
+            for dy in range(4):
+                for dx in range(4):
+                    edge = dx in (0, 3) or dy in (0, 3)
+                    c.set(ex + dx, y + dy, BLACK if edge else WHITE)
+            c.set(ex + 1, y + 2, BLACK)
+            c.set(ex + 2, y + 2, BLACK)
+        return
+
+
+def generate(seed, size=30, proper_eyes=False, **knobs):
     """Render a generated sprite into a SIZE x SIZE 1-bit Canvas."""
-    cells = get_sprite(seed, size)
+    if proper_eyes:
+        knobs.setdefault("eyes", False)
+    cells = get_sprite(seed, size, **knobs)
     c = Canvas(SIZE, SIZE)
     if not cells:
         return c
     xs = [p[0] for (p, _col) in cells]
     ys = [p[1] for (p, _col) in cells]
+    ext = max(max(xs) - min(xs) + 1, max(ys) - min(ys) + 1)
+    if ext > SIZE:
+        # generated on a larger grid: nearest-neighbour downscale
+        f = SIZE / ext
+        cells = [((int(p[0] * f), int(p[1] * f)), col) for (p, col) in cells]
+        xs = [p[0] for (p, _col) in cells]
+        ys = [p[1] for (p, _col) in cells]
     ox = (SIZE - (max(xs) - min(xs) + 1)) // 2 - min(xs)
     oy = (SIZE - (max(ys) - min(ys) + 1)) // 2 - min(ys)
 
@@ -349,4 +408,6 @@ def generate(seed, size=30):
         level = round((1.0 - lum) * 2) * 2
         put(x + ox, y + oy,
             dither_at(x, y, level) if level > 0 else WHITE)
+    if proper_eyes:
+        _proper_eyes(c)
     return c

@@ -24,4 +24,5 @@ SEEDS = [
     ("vantabeast", 4),
 ]
 
-ZNOMES = [(name, lambda s=seed: generate(s)) for name, seed in SEEDS]
+ZNOMES = [(name, lambda s=seed: generate(s, proper_eyes=True))
+          for name, seed in SEEDS]

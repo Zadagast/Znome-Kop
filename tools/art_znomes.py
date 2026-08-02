@@ -1,7 +1,7 @@
 """Battle sprites for the 12 Znome species.
 
-Generated with the faithful Deep-Fold SpriteGenerator port in
-znome_gen: mirrored random maps grown by cellular automata, flood-fill
+Generated with the standalone spritegen package (repo root), the
+faithful Deep-Fold SpriteGenerator port: mirrored random maps grown by cellular automata, flood-fill
 parts, hole-eyes and noise shading.  Each species is a picked seed plus
 grid-shape knobs; every connected part bobs on its own phase across
 FRAMES idle frames, sliding over its neighbours like the generator's
@@ -9,7 +9,12 @@ animated showcase.  Base forms use small grids, evolved forms large
 ones.
 """
 
-from znome_gen import render_frames
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from spritegen import render_frames
 
 SIZE = 96
 FRAMES = 4

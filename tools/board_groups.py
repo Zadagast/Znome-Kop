@@ -1,10 +1,13 @@
 """Seed-picking board for the group-wobble Deep-Fold generator."""
 
+import os
 import sys
 
 from PIL import Image
 
-from znome_gen import render_frames
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from spritegen import render_frames
 
 # name, dark, knobs
 CONFIGS = [

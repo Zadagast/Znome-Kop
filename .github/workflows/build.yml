@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua and Pillow
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 python3-pil libpng16-16
+
+      - name: Headless gameplay tests
+        run: SEEDS=40 lua5.4 tests/run.lua
+
+      - name: Check generated art is in sync
+        run: |
+          python3 tools/gen_art.py
+          git diff --exit-code -- source/images source/scripts/world/atlas.lua
+
+      - name: Install Playdate SDK
+        run: |
+          curl -sL -o sdk.tar.gz https://download.panic.com/playdate_sdk/Linux/PlaydateSDK-latest.tar.gz
+          mkdir -p "$HOME/playdate"
+          tar xzf sdk.tar.gz -C "$HOME/playdate" --strip-components=1
+
+      - name: Compile pdx
+        run: make build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZnomeKop.pdx
+          path: ZnomeKop.pdx

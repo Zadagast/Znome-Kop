@@ -1,196 +1,27 @@
-"""Procedurally generated 32x32 sprites for the 12 Znome species.
+"""32x32 Znome battle sprites from the Deep-Fold generator port.
 
-Each species is a coarse silhouette bias mask ('#' body, '+' sparse,
-'.' empty) plus a hand-picked seed fed to znome_gen (a 1-bit port of
-Deep-Fold's MIT SpriteGenerator). Void-line species render dark.
+Each species is a hand-picked seed fed straight to znome_gen (a faithful
+Python port of Deep-Fold's MIT SpriteGenerator); no per-species masks or
+edits, only seed selection.
 """
 
 from znome_gen import generate
 
 SIZE = 32
 
-# (mask, seed, dark)
-SPECIES = {
-    # regolith: round pebble hatchling
-    "rubblin": ([
-        "............",
-        "....####....",
-        "..########..",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        "..########..",
-        ".+##....##+.",
-        ".++......++.",
-        "............"], 7, False),
-    # regolith: broad golem with hanging arms
-    "cragnome": ([
-        "............",
-        "...######...",
-        "...######...",
-        ".##########.",
-        "############",
-        "##.######.##",
-        "##.######.##",
-        "##.######.##",
-        "...######...",
-        "..+##..##+..",
-        "..##....##..",
-        "............"], 6, False),
-    # cryo: ice seed with a spiked crown
-    "frostpod": ([
-        "..#..##..#..",
-        "..##.##.##..",
-        "..########..",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        "..########..",
-        "..########..",
-        "...######...",
-        "....+##+....",
-        "............"], 3, False),
-    # cryo: tall crystalline wraith
-    "cryonaut": ([
-        "...##..##...",
-        "...######...",
-        "..########..",
-        "..########..",
-        "...######...",
-        "..########..",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        "..##....##..",
-        "............"], 6, False),
-    # plasma: flame teardrop wisp
-    "sparklet": ([
-        ".....#......",
-        "....###.....",
-        "...#####....",
-        "...#####....",
-        "..#######...",
-        "..#######...",
-        "..#######...",
-        "..#######...",
-        "...#####....",
-        "....###.....",
-        ".....+......",
-        "............"], 0, False),
-    # plasma: eared static feline
-    "arcfang": ([
-        ".##.....##..",
-        ".###...###..",
-        ".#########..",
-        ".#########..",
-        ".#########..",
-        "..#######...",
-        "..#######..+",
-        ".#########.+",
-        ".#########++",
-        ".##..##..##.",
-        ".##..##.....",
-        "............"], 7, False),
-    # ferro: boxy scrap robot
-    "tinplate": ([
-        "....####....",
-        "....####....",
-        ".....##.....",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        ".##########.",
-        "..##....##..",
-        "..##....##..",
-        "............"], 6, False),
-    # ferro: plated quadruped
-    "ferrox": ([
-        "............",
-        ".###....###.",
-        ".##########.",
-        "############",
-        "############",
-        "############",
-        "############",
-        ".##########.",
-        ".##########.",
-        ".##..##..##.",
-        ".##..##..##.",
-        "............"], 6, False),
-    # myco: capped spore walker
-    "mycomite": ([
-        "............",
-        "..########..",
-        ".##########.",
-        "############",
-        "############",
-        "...######...",
-        "...######...",
-        "...######...",
-        "..########..",
-        "..##....##..",
-        "............",
-        "............"], 2, False),
-    # myco: void flower with petal crown
-    "bloomshade": ([
-        "..##.##.##..",
-        ".##########.",
-        ".##########.",
-        "..########..",
-        "...######...",
-        "...######...",
-        "....####....",
-        "...######...",
-        "..########..",
-        ".###....###.",
-        ".##......##.",
-        "............"], 6, False),
-    # void: small dark mote
-    "nullet": ([
-        "............",
-        "............",
-        "....####....",
-        "...######...",
-        "..########..",
-        "..########..",
-        "..########..",
-        "..########..",
-        "...######...",
-        "....####....",
-        "............",
-        "............"], 7, True),
-    # void: hulking horned apex beast
-    "vantabeast": ([
-        "##........##",
-        "###......###",
-        "############",
-        "############",
-        "############",
-        "############",
-        "############",
-        "############",
-        "############",
-        ".###....###.",
-        ".###....###.",
-        "............"], 6, True),
-}
-
-ORDER = [
-    "rubblin", "cragnome", "frostpod", "cryonaut", "sparklet", "arcfang",
-    "tinplate", "ferrox", "mycomite", "bloomshade", "nullet", "vantabeast",
+SEEDS = [
+    ("rubblin", 39),
+    ("cragnome", 34),
+    ("frostpod", 23),
+    ("cryonaut", 27),
+    ("sparklet", 63),
+    ("arcfang", 11),
+    ("tinplate", 66),
+    ("ferrox", 84),
+    ("mycomite", 62),
+    ("bloomshade", 97),
+    ("nullet", 30),
+    ("vantabeast", 4),
 ]
 
-
-def _sprite(name):
-    mask, seed, dark = SPECIES[name]
-    base = sum(ord(ch) for ch in name) * 131
-    return generate(base + seed, mask=mask, dark=dark)
-
-
-ZNOMES = [(name, lambda n=name: _sprite(n)) for name in ORDER]
+ZNOMES = [(name, lambda s=seed: generate(s)) for name, seed in SEEDS]

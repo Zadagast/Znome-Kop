@@ -118,7 +118,7 @@ function PauseScene:drawSquad()
 	local sel = game.party[self.sub]
 	if sel then
 		local img = Assets.znomeImage(sel.species)
-		img:drawScaled(300, 24, 1)
+		img:draw(316, 20)
 		local def = Species.get(sel.species)
 		UI.text(Types.short[def.type] .. "  GRADE " .. sel.grade, 24, 208)
 		local names = {}
@@ -152,8 +152,8 @@ function PauseScene:drawKodex()
 	local id = Species.order[self.sub]
 	local def = Species.get(id)
 	if game.kodex.seen[id] then
-		Assets.znomeImage(id):drawScaled(300, 40, 2)
-		UI.text(Types.short[def.type], 300, 112)
+		Assets.znomeImage(id):draw(304, 44)
+		UI.text(Types.short[def.type], 304, 112)
 		UI.text(def.kodex, 24, 202)
 	else
 		UI.text("No field data recorded.", 24, 202)
@@ -229,7 +229,7 @@ function StarterScene:draw()
 	for i, id in ipairs(STARTERS) do
 		local x = 30 + (i - 1) * 124
 		UI.frame(x, 44, 108, 118)
-		Assets.znomeImage(id):drawScaled(x + 22, 56, 2)
+		Assets.znomeImage(id):draw(x + 26, 54)
 		local def = Species.get(id)
 		UI.text(def.name, x + 12, 128)
 		UI.text(Types.short[def.type], x + 12, 144)
@@ -289,8 +289,8 @@ function TitleScene:draw()
 	UI.text("ZNOME KOP", 128, 42, true)
 	UI.text("MARS FIELD OPERATIONS", 112, 70)
 
-	Assets.znomeImage("rubblin"):drawScaled(40, 150, 2)
-	Assets.znomeImage("sparklet"):drawScaled(296, 150, 2)
+	Assets.znomeImage("rubblin"):draw(44, 156)
+	Assets.znomeImage("sparklet"):draw(300, 156)
 
 	UI.menu(150, 112, 100, self.items, self.index)
 end

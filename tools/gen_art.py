@@ -540,9 +540,9 @@ def build_launcher(znome_frames):
     for i in range(0, 350, 40):
         card.line(i, 96, i + 18, 155, BLACK)
     card.outline_rect(0, 0, 350, 155, BLACK)
-    card.blit(znome_frames[0], 24, 60)
-    card.blit(znome_frames[4], 150, 62)
-    card.blit(znome_frames[11], 276, 58)
+    card.blit(znome_frames[0], 24, 72)
+    card.blit(znome_frames[4], 148, 74)
+    card.blit(znome_frames[11], 272, 70)
     panel(card, 40, 16, 270, 34)
     write_sheet(os.path.join(out, "card.png"), [card], 1, 350, 155)
 
@@ -553,8 +553,8 @@ def build_launcher(znome_frames):
     img.convert("RGBA").save(os.path.join(out, "card.png"))
 
     icon = Canvas(32, 32, WHITE)
+    icon.blit(znome_frames[0], -12, -14)
     icon.outline_rect(0, 0, 32, 32, BLACK)
-    icon.blit(znome_frames[0], 0, 0)
     write_sheet(os.path.join(out, "icon.png"), [icon], 1, 32, 32)
 
 
@@ -568,7 +568,7 @@ def main():
 
     znome_frames = [fn() for _, fn in ZNOMES]
     write_sheet(
-        os.path.join(IMAGES, "znomes-table-32-32.png"),
+        os.path.join(IMAGES, "znomes-table-56-56.png"),
         znome_frames, 6, ZNOME_SIZE, ZNOME_SIZE,
     )
 

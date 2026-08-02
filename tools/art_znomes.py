@@ -5,9 +5,7 @@ head, face, mirrored appendages) and rendered GB-style with white
 bodies, selective dither shading and solid black outlines.
 """
 
-from znome_parts import SPECIES, generate
-
-SIZE = 32
+from znome_parts import SIZE, SPECIES, generate
 
 ORDER = [
     "rubblin", "cragnome", "frostpod", "cryonaut", "sparklet", "arcfang",

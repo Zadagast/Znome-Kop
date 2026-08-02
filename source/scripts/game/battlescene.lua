@@ -233,9 +233,9 @@ function BattleScene:draw()
 
 	local shakeX = (self.shake > 0) and ((self.shake // 3) % 2 == 0 and 2 or -2) or 0
 	local foeImg = Assets.znomeImage(b.foe.creature.species)
-	foeImg:drawScaled(268 + shakeX, 14, 2)
+	foeImg:draw(264 + shakeX, 34)
 	local myImg = Assets.znomeImage(b.player.creature.species)
-	myImg:drawScaled(48, 96, 2)
+	myImg:draw(56, 118)
 
 	UI.statusPlate(8, 10, b.foe.creature, false, self.hpShown.foe)
 	UI.statusPlate(236, 108, b.player.creature, true, self.hpShown.player)

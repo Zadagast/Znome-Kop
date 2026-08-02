@@ -14,7 +14,6 @@ function Game.new()
 	self.sector = 1
 	self.mapKey = "colony"
 	self.x, self.y, self.dir = 12, 12, "down"
-	self.seeds = {}
 	self.flags = {}
 	self.unlocked = 1
 	self.steps = 0
@@ -110,13 +109,6 @@ function Game:bagList(filter)
 end
 
 -- --- world flags ---------------------------------------------------------
-
-function Game:seedFor(sectorIndex)
-	if not self.seeds[sectorIndex] then
-		self.seeds[sectorIndex] = self.rng:range(1, 0x7FFFFFFF)
-	end
-	return self.seeds[sectorIndex]
-end
 
 function Game:flag(key)
 	return self.flags[key] == true

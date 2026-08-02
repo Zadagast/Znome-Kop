@@ -1,6 +1,6 @@
---- Persistence. Generated sectors are stored as seeds plus the handful of
---- mutable flags (looted caches, cleared anomalies), so a save file stays
---- tiny and maps rebuild identically on load.
+--- Persistence. Generated sectors use fixed dev-picked seeds, so only the
+--- mutable flags (looted caches, cleared anomalies) are stored and a save
+--- file stays tiny; maps rebuild identically on load.
 
 Save = {}
 
@@ -19,7 +19,6 @@ function Save.serialise(game)
 		x = game.x,
 		y = game.y,
 		dir = game.dir,
-		seeds = game.seeds,
 		flags = game.flags,
 		steps = game.steps,
 		unlocked = game.unlocked,
@@ -41,7 +40,7 @@ end
 
 function Save.apply(game, data)
 	for _, key in ipairs({ "party", "box", "bag", "kodex", "sector", "mapKey",
-		"x", "y", "dir", "seeds", "flags", "steps", "unlocked" }) do
+		"x", "y", "dir", "flags", "steps", "unlocked" }) do
 		if data[key] ~= nil then game[key] = data[key] end
 	end
 	for _, c in ipairs(game.party) do Creature.recalc(c) end

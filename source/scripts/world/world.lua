@@ -26,7 +26,7 @@ function World.build(game, key)
 	local index = tonumber(key:match("^sector:(%d+)$"))
 	assert(index, "unknown map key " .. tostring(key))
 	local sector = Sectors.get(index)
-	local map, ex, ey = MapGen.generate(sector, game:seedFor(index))
+	local map, ex, ey = MapGen.generate(sector, sector.seed)
 	map.entryX, map.entryY = ex, ey
 	map.key = key
 	return map

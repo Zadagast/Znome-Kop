@@ -3,8 +3,8 @@
 import "CoreLibs/graphics"
 
 local gfx <const> = playdate.graphics
-local TILE <const> = 16
-local STEP_PX <const> = 2 -- 8 frames per tile at 30 fps
+local TILE <const> = 32
+local STEP_PX <const> = 4 -- 8 frames per tile at 30 fps
 
 Overworld = {}
 Overworld.__index = Overworld

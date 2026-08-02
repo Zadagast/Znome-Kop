@@ -4,7 +4,7 @@
 Map = {}
 Map.__index = Map
 
-Map.TILE = 16
+Map.TILE = 32
 
 function Map.new(w, h, fillName)
 	local self = setmetatable({}, Map)

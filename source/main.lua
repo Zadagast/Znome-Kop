@@ -23,6 +23,8 @@ import "scripts/game/creature"
 import "scripts/game/battle"
 import "scripts/game/state"
 import "scripts/game/scenes"
+import "scripts/game/herorig"
+import "scripts/game/hero"
 import "scripts/game/sidescroller"
 import "scripts/game/battlescene"
 import "scripts/game/menus"
@@ -35,6 +37,20 @@ UI.init()
 Assets.load()
 gfx.setBackgroundColor(gfx.kColorWhite)
 Scenes.replace(TitleScene.new())
+
+-- Dev toggles: compare the live limb rig against the baked walk frames and
+-- watch the frame time while doing it (the device is far slower than the
+-- simulator).
+SHOW_FPS = false
+do
+	local menu = playdate.getSystemMenu()
+	menu:addCheckmarkMenuItem("live rig", Hero.RUNTIME, function(on)
+		Hero.RUNTIME = on
+	end)
+	menu:addCheckmarkMenuItem("show fps", SHOW_FPS, function(on)
+		SHOW_FPS = on
+	end)
+end
 
 function playdate.update()
 	Scenes.update()

@@ -10,7 +10,9 @@ function Assets.load()
 	Assets.znomes = gfx.imagetable.new("images/znomes")
 	Assets.hero = gfx.imagetable.new("images/hero")
 	Assets.heroine = gfx.imagetable.new("images/heroine")
-	assert(Assets.znomes and Assets.hero and Assets.heroine, "missing image tables")
+	Assets.heroParts = gfx.imagetable.new("images/heroparts")
+	assert(Assets.znomes and Assets.hero and Assets.heroine and Assets.heroParts,
+		"missing image tables")
 	Assets.scenes = {}
 	for _, name in ipairs(SCENES) do
 		local img = gfx.image.new("images/scenes/scene-" .. name)

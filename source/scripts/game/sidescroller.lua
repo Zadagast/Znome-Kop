@@ -261,11 +261,6 @@ end
 
 -- --- draw ------------------------------------------------------------------
 
---- Frame 1 is idle; frames 2..7 are the baked walk cycle (tools/ai_rig.py).
-local function heroFrame(moving, t)
-	if not moving then return 1 end
-	return 2 + (t // 4) % 6
-end
 
 function SideScroller:draw()
 	local game = self.game
@@ -280,11 +275,7 @@ function SideScroller:draw()
 		img:draw(npc.x - w // 2, GROUND_Y - h)
 	end
 
-	local frame = heroFrame(self.moving, self.t)
-	local img = Assets.hero:getImage(frame)
-	local flip = (game.face or 1) < 0 and gfx.kImageFlippedX or gfx.kImageUnflipped
-	local w, h = img:getSize()
-	img:draw(game.px - w // 2, GROUND_Y - h, flip)
+	Hero.draw(game.px, GROUND_Y, self.moving, self.t, game.face)
 
 	if self.transition then
 		local t = 8 - self.transition.timer
@@ -307,5 +298,9 @@ function SideScroller:draw()
 
 	if self.dialog then
 		UI.dialog(self.dialog[self.dialogIndex] or "", self.dialogIndex < #self.dialog)
+	end
+
+	if SHOW_FPS then
+		playdate.drawFPS(4, 220)
 	end
 end

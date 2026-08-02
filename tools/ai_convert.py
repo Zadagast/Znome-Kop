@@ -62,7 +62,7 @@ def extract_sprite(cell, target_h):
     crop = src.resize((pw, ph), Image.LANCZOS)
     # min-filtered copy keeps 1-2px dark details (mouth, eyes) alive
     # through the heavy downscale
-    dark = src.filter(ImageFilter.MinFilter(5)).resize((pw, ph), Image.LANCZOS)
+    dark = src.filter(ImageFilter.MinFilter(7)).resize((pw, ph), Image.LANCZOS)
     m = Image.new("L", (cwd, chg), 0)
     mp = m.load()
     for y in range(chg):
@@ -82,7 +82,7 @@ def extract_sprite(cell, target_h):
             edge = any(not (0 <= x + dx < pw and 0 <= y + dy < ph
                             and mask[y + dy][x + dx])
                        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
-            black = cp[x, y] < BLACK or (cp[x, y] < 170 and dp[x, y] < 25)
+            black = cp[x, y] < BLACK or (cp[x, y] < 200 and dp[x, y] < 60)
             sp[x + 1, y + 1] = (0, 0, 0, 255) \
                 if (edge or black) else (255, 255, 255, 255)
     # 1px white halo so characters pop against dark backdrops
@@ -157,7 +157,7 @@ def scene(src, name):
 
 def main():
     os.makedirs(os.path.join(IMAGES, "scenes"), exist_ok=True)
-    sheet(extract_cells(os.path.join(RAW, "gen_male_sheet.png")), "hero")
+    # hero comes from the part rig: python3 tools/ai_rig.py
     sheet(extract_cells(os.path.join(RAW, "gen_female_sheet.png")), "heroine")
     scene("world_lab.png", "lab")
     scene("world_colony.png", "colony")

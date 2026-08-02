@@ -19,7 +19,19 @@ can produce matching assets by following this contract.
    `source/scripts/game/sidescroller.lua`; new character sheets need a
    `sheet(...)` call in `tools/ai_convert.py`.
 
-## Character sheet contract
+## Character part sheet contract (preferred: rig-baked animation)
+
+The hero is animated from a paper-doll part sheet baked by
+`python3 tools/ai_rig.py` (rotates limbs around pivots at raw resolution,
+so all frames are the exact same art). Raw file:
+`tools/ai_raw/gen_male_parts.png` — a 1024x1024 2x2 grid on solid magenta
+`#FF00FF`, side view facing right, consistent scale, one part per cell:
+top-left head (helmet + neck stub), top-right torso (shoulders/hips flat,
+no head/arms/legs), bottom-left one arm (shoulder to hand, vertical),
+bottom-right one leg (hip to boot, vertical). Output table: frame 1 idle +
+6 walk frames.
+
+## Character sheet contract (legacy: pre-drawn frames)
 
 - 1024x1024 image, 2x2 grid of equal cells.
 - Solid magenta `#FF00FF` background everywhere (this is the chroma key —

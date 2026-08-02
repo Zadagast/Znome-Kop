@@ -261,12 +261,10 @@ end
 
 -- --- draw ------------------------------------------------------------------
 
---- Walk cycle ping-pongs contact/passing/contact/passing: 2,3,4,3.
-local WALK <const> = { 2, 3, 4, 3 }
-
+--- Frame 1 is idle; frames 2..7 are the baked walk cycle (tools/ai_rig.py).
 local function heroFrame(moving, t)
 	if not moving then return 1 end
-	return WALK[(t // 5) % 4 + 1]
+	return 2 + (t // 4) % 6
 end
 
 function SideScroller:draw()

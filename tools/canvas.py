@@ -146,6 +146,22 @@ def from_ascii(rows):
     return c
 
 
+def from_png(path):
+    """Load a 1-bit RGBA PNG (as written by convert_packs.py) into a Canvas."""
+    from PIL import Image
+
+    img = Image.open(path).convert("RGBA")
+    c = Canvas(img.width, img.height)
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a < 128:
+                continue
+            c.px[y][x] = BLACK if r < 128 else WHITE
+    return c
+
+
 def write_sheet(path, frames, cols, cell_w, cell_h):
     """Write frames into a grid PNG that pdc reads as an image table."""
     from PIL import Image

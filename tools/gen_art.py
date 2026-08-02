@@ -17,11 +17,31 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from art_actors import ACTORS
 from art_znomes import SIZE as ZNOME_SIZE, ZNOMES
-from canvas import BLACK, CLEAR, WHITE, Canvas, dither_at, from_ascii, write_sheet
+from canvas import (
+    BLACK, CLEAR, WHITE, Canvas, dither_at, from_ascii, from_png, write_sheet,
+)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMAGES = os.path.join(ROOT, "source", "images")
+PACK_ART = os.path.join(ROOT, "tools", "pack_art")
 T = 16  # tile size
+
+
+def pack(name):
+    """Load a converted asset-pack element (see tools/convert_packs.py)."""
+    return from_png(os.path.join(PACK_ART, name + ".png"))
+
+
+def pack_fn(name):
+    return lambda: pack(name)
+
+
+def rot90(c):
+    out = Canvas(c.h, c.w)
+    for y in range(c.h):
+        for x in range(c.w):
+            out.px[x][c.h - 1 - y] = c.px[y][x]
+    return out
 
 
 def rnd(x, y, salt=0):
@@ -295,33 +315,33 @@ def o_marker():
 
 
 GROUND_TILES = [
-    ("dust", t_dust, {}),
-    ("regolith", t_regolith, {}),
-    ("gravel", t_gravel, {}),
-    ("dunes", t_dunes, {}),
-    ("plate", t_plate, {}),
-    ("grate", t_grate, {}),
-    ("sporegrass", t_sporegrass, {"encounter": True}),
-    ("sporegrass_tall", t_sporegrass_tall, {"encounter": True}),
+    ("dust", pack_fn("tile_dust"), {}),
+    ("regolith", pack_fn("tile_regolith"), {}),
+    ("gravel", pack_fn("tile_gravel"), {}),
+    ("dunes", pack_fn("tile_dunes"), {}),
+    ("plate", pack_fn("tile_plate"), {}),
+    ("grate", pack_fn("tile_grate"), {}),
+    ("sporegrass", pack_fn("tile_sporegrass"), {"encounter": True}),
+    ("sporegrass_tall", pack_fn("tile_sporegrass_tall"), {"encounter": True}),
     ("coolant", t_coolant, {"solid": True}),
-    ("rock", t_rock, {"solid": True}),
-    ("cliff", t_cliff, {"solid": True}),
+    ("rock", pack_fn("tile_rock"), {"solid": True}),
+    ("cliff", pack_fn("tile_cliff"), {"solid": True}),
     ("crater", t_crater, {"solid": True}),
     ("tube", t_tube, {}),
-    ("ash", t_ash, {"encounter": True}),
+    ("ash", pack_fn("tile_ash"), {"encounter": True}),
 ]
 
 OBJECT_TILES = [
-    ("boulder", o_boulder, {"solid": True}),
-    ("fence_h", o_fence_h, {"solid": True}),
-    ("fence_v", o_fence_v, {"solid": True}),
-    ("sign", o_sign, {"solid": True}),
-    ("crate", o_crate, {"solid": True}),
+    ("boulder", pack_fn("obj_boulder"), {"solid": True}),
+    ("fence_h", pack_fn("obj_fence_h"), {"solid": True}),
+    ("fence_v", lambda: rot90(pack("obj_fence_h")), {"solid": True}),
+    ("sign", pack_fn("obj_sign"), {"solid": True}),
+    ("crate", pack_fn("obj_crate"), {"solid": True}),
     ("pipe_h", o_pipe_h, {"solid": True}),
     ("pipe_v", o_pipe_v, {"solid": True}),
-    ("lichen", o_lichen, {}),
-    ("vent", o_vent, {"solid": True}),
-    ("marker", o_marker, {"solid": True}),
+    ("lichen", pack_fn("obj_lichen"), {}),
+    ("vent", pack_fn("obj_vent"), {"solid": True}),
+    ("marker", pack_fn("obj_marker"), {"solid": True}),
 ]
 
 
@@ -351,55 +371,20 @@ def door(c, x, y, w=T, h=None):
 
 
 def s_hab():
-    """4x3 tile colony habitat with a domed roof and one airlock."""
+    """4x3 tile colony habitat (GB Village cottage, door on tile 2,2)."""
     w, h = 4 * T, 3 * T
     c = Canvas(w, h)
-    # dome roof
-    for y in range(0, 26):
-        for x in range(0, w):
-            dx = (x - w / 2 + 0.5) / (w / 2 - 1)
-            dy = (y - 26) / 24.0
-            if dx * dx + dy * dy <= 1.0:
-                c.set(x, y, dither_at(x, y, 0 if x < w * 0.78 else 4))
-    for y in range(0, 26):
-        for x in range(w):
-            if c.get(x, y) == CLEAR:
-                continue
-            if CLEAR in (c.get(x - 1, y), c.get(x + 1, y), c.get(x, y - 1)):
-                c.set(x, y, BLACK)
-    for y in range(6, 24, 8):
-        c.hline(6, w - 7, y, BLACK)
-    # body
-    panel(c, 2, 24, w - 4, h - 24)
-    # windows: dark glass, white frame, GB-house style
-    for wx in (8, w - 20):
-        c.rect(wx - 1, 27, 14, 10, WHITE)
-        panel(c, wx, 28, 12, 8, "d75")
-        c.hline(wx + 1, wx + 10, 31, WHITE)
-    door(c, 2 * T, 32, T, 16)
+    art = pack("spr_hab")
+    c.blit(art, 12, h - art.h)
     return c, {"w": 4, "h": 3, "doors": [(2, 2)]}
 
 
 def s_lab():
-    """5x4 tile research outpost (the colony's Znome Lab)."""
+    """5x4 tile research outpost (GB Village two-story house)."""
     w, h = 5 * T, 4 * T
     c = Canvas(w, h)
-    panel(c, 0, 20, w, h - 20)
-    # stepped upper dome
-    panel(c, 8, 8, w - 16, 16, "white")
-    for y in (12, 18):
-        c.hline(10, w - 11, y, BLACK)
-    panel(c, 20, 0, w - 40, 10, "d25")
-    c.vline(w // 2, 0, 8, BLACK)
-    c.hline(w // 2 - 4, w // 2 + 4, 0, BLACK)
-    # window band: dark glass with mullions
-    panel(c, 6, 26, w - 12, 10, "d75")
-    for x in range(14, w - 10, 12):
-        c.vline(x, 26, 35, WHITE)
-    door(c, 2 * T, 44, T, 20)
-    for sx in (6, w - 12):
-        panel(c, sx, 40, 6, 20, "white")
-        c.hline(sx + 1, sx + 4, 50, BLACK)
+    art = pack("spr_lab")
+    c.blit(art, (w - art.w) // 2, h - art.h)
     return c, {"w": 5, "h": 4, "doors": [(2, 3)]}
 
 
@@ -407,26 +392,16 @@ def s_gate():
     """3x2 perimeter airlock; the middle bottom tile is the zone exit."""
     w, h = 3 * T, 2 * T
     c = Canvas(w, h)
-    panel(c, 0, 0, T, h, "d50")
-    panel(c, 2 * T, 0, T, h, "d50")
-    rivets(c, 0, 0, T, h)
-    rivets(c, 2 * T, 0, T, h)
-    c.rect(T, 0, T, h, WHITE)
-    c.hline(T, 2 * T - 1, 0, BLACK)
-    for y in range(4, h, 6):
-        c.hline(T + 2, 2 * T - 3, y, BLACK)
+    c.blit(pack("spr_airlock"), 8, 0)
+    c.blit(pack("spr_pillar"), 0, 0)
+    c.blit(pack("spr_pillar"), 2 * T, 0)
     return c, {"w": 3, "h": 2, "doors": [(1, 1)]}
 
 
 def s_solar():
-    w, h = 2 * T, 2 * T
-    c = Canvas(w, h)
-    panel(c, 1, 2, w - 2, 18, "d25")
-    for x in range(5, w - 2, 5):
-        c.vline(x, 3, 19, BLACK)
-    c.hline(2, w - 3, 11, BLACK)
-    c.vline(w // 2, 20, h - 2, BLACK)
-    c.hline(w // 2 - 4, w // 2 + 4, h - 2, BLACK)
+    """2x2 comms/solar dish from the sci-fi pack."""
+    c = Canvas(2 * T, 2 * T)
+    c.blit(pack("spr_solar"), 0, 0)
     return c, {"w": 2, "h": 2, "doors": []}
 
 
@@ -539,14 +514,16 @@ def lua_atlas(names, flags, structures, count):
 
 
 def build_actors():
+    """Actor sheets from the GB Village pack: down/up/side pairs, side faces
+    left in the pack, so right is the mirror."""
     frames = []
     order = []
     for name in ("kop", "colonist", "tech"):
-        d0, d1, u0, u1, r0, r1 = ACTORS[name]
-        arts = [from_ascii(a) for a in (d0, d1, u0, u1, r0, r1)]
-        left = [arts[4].flip_h(), arts[5].flip_h()]
+        sheet = pack("actor_" + name)
+        arts = [sheet.sub(i * T, 0, T, T) for i in range(6)]
+        d0, d1, u0, u1, l0, l1 = arts
         base = len(frames) + 1
-        frames.extend(arts[:4] + left + arts[4:6])
+        frames.extend([d0, d1, u0, u1, l0, l1, l0.flip_h(), l1.flip_h()])
         order.append((name, base))
     return frames, order
 

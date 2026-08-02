@@ -1,3 +1,4 @@
 # ZnomeKop.pdx is committed on purpose: pull the repo and run it, no SDK needed.
 *.pdx/
 !ZnomeKop.pdx/
+__pycache__/

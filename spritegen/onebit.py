@@ -92,10 +92,22 @@ def render_frames(seed, out_w, out_h, cell=2, frames=4, dark=False,
             amp = detail
             phase = gi * 2.399
             dy = round(amp * math.sin(2 * math.pi * f / frames + phase))
+            # refined parts draw their outline first so the body never
+            # paints over a seam between overlapping parts
+            for (x, y), col in (g["cells"] if detail > 1 else ()):
+                if col != "outline":
+                    continue
+                px = x * cell + ox
+                py = (y + dy) * cell + oy
+                for yy in range(py, py + cell):
+                    for xx in range(px, px + cell):
+                        c.set(xx, yy, BLACK)
             for (x, y), col in g["cells"]:
                 px = x * cell + ox
                 py = (y + dy) * cell + oy
                 if col == "outline":
+                    if detail > 1:
+                        continue
                     v = BLACK
                 elif isinstance(col, tuple) and col[0] == "eye":
                     v = WHITE if dark else BLACK

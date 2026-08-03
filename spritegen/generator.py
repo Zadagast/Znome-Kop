@@ -144,9 +144,10 @@ def _get_at(grid, w, h, x, y):
     return grid[x][y]
 
 
-def _fill_colors(rng, grid, w, h, scheme, eye_scheme, n_colors, outline):
-    noise = FractalNoise(rng, 5, 30.0, 0.4, 3.0)
-    noise2 = FractalNoise(rng, 3, 40.0, 0.4, 3.0)
+def _fill_colors(rng, grid, w, h, scheme, eye_scheme, n_colors, outline,
+                 noise=None, noise2=None):
+    noise = noise or FractalNoise(rng, 5, 30.0, 0.4, 3.0)
+    noise2 = noise2 or FractalNoise(rng, 3, 40.0, 0.4, 3.0)
 
     def flood(map_, is_negative):
         checked = [[False] * h for _ in range(w)]
@@ -266,17 +267,43 @@ def _touching(g1, g2):
     return False
 
 
-def _upscale(grid, w, h, factor, smooth):
-    """Redraw the CA grid at `factor` times the resolution and let a
-    majority filter round its contours.  The silhouette survives (the
-    creature is recognisably the same seed) but every edge, hole and
-    shading step is resolved on a finer grid, so the sprite carries real
-    detail instead of bigger blocks."""
-    fw, fh = w * factor, h * factor
-    fine = [[grid[x // factor][y // factor] for y in range(fh)]
-            for x in range(fw)]
+def _components(map_, w, h):
+    """Connected true-cells of a boolean map, as lists of (x, y)."""
+    seen = [[False] * h for _ in range(w)]
+    out = []
+    for sx in range(w):
+        for sy in range(h):
+            if seen[sx][sy] or not map_[sx][sy]:
+                continue
+            seen[sx][sy] = True
+            bucket, cells = [(sx, sy)], []
+            while bucket:
+                x, y = bucket.pop()
+                cells.append((x, y))
+                for xx, yy in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= xx < w and 0 <= yy < h and map_[xx][yy] \
+                            and not seen[xx][yy]:
+                        seen[xx][yy] = True
+                        bucket.append((xx, yy))
+            out.append(cells)
+    return out
+
+
+def _refine(cells, factor, smooth, fw, fh):
+    """Redraw one part at `factor` times the resolution and let a majority
+    filter round its contours.  The part's shape survives (it is still the
+    seed's own blob) but every edge, hole and shading step resolves on a
+    finer grid, so the sprite carries real detail instead of bigger
+    blocks.  Parts are refined one at a time: smoothing the whole creature
+    at once would weld neighbouring parts into a single blob and cost the
+    generator its independently animated pieces."""
+    mask = [[False] * fh for _ in range(fw)]
+    for (x, y) in cells:
+        for i in range(factor):
+            for j in range(factor):
+                mask[x * factor + i][y * factor + j] = True
     for _ in range(smooth):
-        out = [col[:] for col in fine]
+        out = [col[:] for col in mask]
         for x in range(fw):
             for y in range(fh):
                 n = 0
@@ -285,14 +312,14 @@ def _upscale(grid, w, h, factor, smooth):
                         if i == 0 and j == 0:
                             continue
                         xx, yy = x + i, y + j
-                        if 0 <= xx < fw and 0 <= yy < fh and fine[xx][yy]:
+                        if 0 <= xx < fw and 0 <= yy < fh and mask[xx][yy]:
                             n += 1
-                if fine[x][y] and n < DEATH_LIMIT:
+                if mask[x][y] and n < DEATH_LIMIT:
                     out[x][y] = False
-                elif not fine[x][y] and n > BIRTH_LIMIT - 1:
+                elif not mask[x][y] and n > BIRTH_LIMIT - 1:
                     out[x][y] = True
-        fine = out
-    return fine, fw, fh
+        mask = out
+    return mask
 
 
 def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
@@ -311,6 +338,105 @@ def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
     return cells
 
 
+def _bolden(cells, mask, fw, fh, weight):
+    """Extra outline cells growing outwards from a part's silhouette.
+
+    Refined parts are outlined one fine pixel thick, which is too thin to
+    separate parts that overlap; growing the outline into the empty space
+    around the part (never into its holes, so eyes survive) restores the
+    bold seams without touching the interior detail."""
+    outside = [[False] * fh for _ in range(fw)]
+    bucket = [(x, y) for x in range(fw) for y in (0, fh - 1)
+              if not mask[x][y]]
+    bucket += [(x, y) for x in (0, fw - 1) for y in range(fh)
+               if not mask[x][y]]
+    for (x, y) in bucket:
+        outside[x][y] = True
+    while bucket:
+        x, y = bucket.pop()
+        for xx, yy in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= xx < fw and 0 <= yy < fh and not mask[xx][yy] \
+                    and not outside[xx][yy]:
+                outside[xx][yy] = True
+                bucket.append((xx, yy))
+
+    edge = {p for (p, col) in cells if col == "outline"
+            and 0 <= p[0] < fw and 0 <= p[1] < fh and outside[p[0]][p[1]]}
+    grown = set()
+    for _ in range(max(0, weight // 2)):
+        ring = set()
+        for (x, y) in edge | grown:
+            for xx, yy in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+                           (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1),
+                           (x - 1, y + 1)):
+                if 0 <= xx < fw and 0 <= yy < fh and outside[xx][yy] \
+                        and (xx, yy) not in edge and (xx, yy) not in grown:
+                    ring.add((xx, yy))
+        grown |= ring
+    return [(p, "outline") for p in grown]
+
+
+def _detailed_groups(rng, grid, w, h, scheme, eye_scheme, n_colors, outline,
+                     eyes, detail, smooth):
+    """get_groups' detail>1 path: split the creature into its parts on the
+    coarse grid, then refine each part on its own so they keep their seams
+    and can still slide over each other."""
+    parts = _components(grid, w, h)
+    fw, fh = w * detail, h * detail
+
+    # holes are refined too and carved back out, otherwise smoothing seals
+    # the creature's eye sockets and gaps shut
+    negative = [[not grid[x][y] for y in range(h)] for x in range(w)]
+    holes = [c for c in _components(negative, w, h)
+             if all(0 < x < w - 1 and 0 < y < h - 1 for (x, y) in c)]
+    noise = FractalNoise(rng, 5, 30.0, 0.4, 3.0)
+    noise2 = FractalNoise(rng, 3, 40.0, 0.4, 3.0)
+
+    kept = []
+    for cells in parts:
+        mask = _refine(cells, detail, smooth, fw, fh)
+        owned = set(cells)
+        for hole in holes:
+            if not any((x + dx, y + dy) in owned for (x, y) in hole
+                       for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                continue
+            carved = _refine(hole, detail, smooth, fw, fh)
+            for x in range(fw):
+                for y in range(fh):
+                    if carved[x][y]:
+                        mask[x][y] = False
+        groups, negative_groups = _fill_colors(
+            rng, mask, fw, fh, scheme, eye_scheme, n_colors, outline,
+            noise, noise2)
+        cells = [c for g in groups for c in g["arr"]]
+        cells = _bolden(cells, mask, fw, fh, detail) + cells
+        part = {"cells": cells, "negative": negative_groups}
+        if not part["cells"]:
+            continue
+        kept.append(part)
+
+    largest = max((len(p["cells"]) for p in kept), default=0)
+    kept = [p for p in kept if len(p["cells"]) >= largest * 0.25]
+
+    for part in kept:
+        negative_groups = part.pop("negative")
+        for g in negative_groups:
+            if not g["valid"] or not _touching(g["arr"], part["cells"]):
+                continue
+            is_eye = eyes if eyes is not None else \
+                (len(g["arr"]) + len(negative_groups)) % 5 >= 3
+            part["cells"].extend(g["arr"])
+            if is_eye:
+                pts = [p for (p, _c) in g["arr"]]
+                ax = sum(p[0] for p in pts) / len(pts)
+                ay = sum(p[1] for p in pts) / len(pts)
+                cutoff = math.sqrt(len(pts)) * 0.3
+                for (p, c) in g["arr"]:
+                    if math.hypot(p[0] - ax, p[1] - ay) < cutoff:
+                        part["cells"].append((p, ("eye", c)))
+    return kept
+
+
 def get_groups(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
                h=None, fill=0.48, walks=2, walk_len=100, ca_steps=N_STEPS,
                eyes=None, detail=1, smooth=2):
@@ -324,10 +450,11 @@ def get_groups(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
     h = h or size
     grid = _generate_new(rng, w, h, fill, walks, walk_len)
     grid = _do_steps(grid, w, h, ca_steps)
-    if detail > 1:
-        grid, w, h = _upscale(grid, w, h, detail, smooth)
     scheme = _generate_new_colorscheme(rng, n_colors)
     eye_scheme = _generate_new_colorscheme(rng, n_colors)
+    if detail > 1:
+        return _detailed_groups(rng, grid, w, h, scheme, eye_scheme, n_colors,
+                                outline, eyes, detail, smooth)
     groups, negative_groups = _fill_colors(
         rng, grid, w, h, scheme, eye_scheme, n_colors, outline)
 

@@ -131,6 +131,30 @@ def compose(head, torso, arm, leg, phase):
     return flat
 
 
+def smooth_mask(mask, w, h, rounds=2):
+    """Majority filter: fill single-pixel dents, shave single-pixel nubs."""
+    for _ in range(rounds):
+        changed = []
+        for y in range(h):
+            for x in range(w):
+                n = 0
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        if dx == 0 and dy == 0:
+                            continue
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < w and 0 <= ny < h and mask[ny][nx]:
+                            n += 1
+                if mask[y][x] and n <= 2:
+                    changed.append((x, y, False))
+                elif not mask[y][x] and n >= 6:
+                    changed.append((x, y, True))
+        if not changed:
+            break
+        for x, y, v in changed:
+            mask[y][x] = v
+
+
 def part_bitmap(part, scale):
     """1-bit render of one raw part at game scale (no halo; the assembled
     figure gets its outline from the parts themselves)."""
@@ -143,8 +167,12 @@ def part_bitmap(part, scale):
     small = gray.resize((pw, ph), Image.LANCZOS).load()
     dark = gray.filter(ImageFilter.MinFilter(7)) \
         .resize((pw, ph), Image.LANCZOS).load()
-    mm = alpha.resize((pw, ph), Image.LANCZOS).load()
+    # Smooth the silhouette before outlining: a blurred-then-thresholded
+    # mask kills the 1px stragglers the downscale leaves on the edge.
+    mm = alpha.resize((pw, ph), Image.LANCZOS) \
+        .filter(ImageFilter.GaussianBlur(0.8)).load()
     mask = [[mm[x, y] > 127 for x in range(pw)] for y in range(ph)]
+    smooth_mask(mask, pw, ph)
     out = Image.new("RGBA", (pw, ph), (0, 0, 0, 0))
     op = out.load()
     for y in range(ph):
@@ -161,7 +189,30 @@ def part_bitmap(part, scale):
             black = small[x, y] < 80 or (small[x, y] < 160 and dark[x, y] < 40)
             op[x, y] = (0, 0, 0, 255) if (edge or black) \
                 else (255, 255, 255, 255)
+    prune_speckles(op, pw, ph)
     return out
+
+
+def prune_speckles(px, w, h):
+    """Erase lone interior black pixels that read as noise, not line work."""
+    lone = []
+    for y in range(h):
+        for x in range(w):
+            if px[x, y] != (0, 0, 0, 255):
+                continue
+            n = 0
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h \
+                            and px[nx, ny] == (0, 0, 0, 255):
+                        n += 1
+            if n <= 1:
+                lone.append((x, y))
+    for x, y in lone:
+        px[x, y] = (255, 255, 255, 255)
 
 
 def anchored(img, ax, ay):

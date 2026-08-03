@@ -1,25 +1,14 @@
---- Hero rendering: either baked walk frames (cheap, one blit) or a
---- runtime paper-doll rig that rotates limbs every frame (Hero.RUNTIME).
---- Both come from the same part art; see tools/ai_rig.py.
+--- Hero rendering: a paper-doll rig composed every frame from the part
+--- images, limbs rotated by sine math (see tools/ai_rig.py for the art
+--- pipeline and source/scripts/game/herorig.lua for the pivot offsets).
 
 local gfx <const> = playdate.graphics
 
 Hero = {}
 
---- Live limb rotation. Costs six rotated blits a frame; on device that is
---- much heavier than the baked path, so measure before shipping it.
-Hero.RUNTIME = true
-
 local LEG_SWING <const> = 24
 local ARM_SWING <const> = 18
 local CYCLE <const> = 24 -- frames per full stride at 30fps
-
-local function drawBaked(px, groundY, moving, t, flip)
-	local frame = moving and (2 + (t // 4) % 6) or 1
-	local img = Assets.hero:getImage(frame)
-	local w, h = img:getSize()
-	img:draw(px - w // 2, groundY - h, flip)
-end
 
 --- Mirrored copies of the part images, built once (drawRotated has no flip
 --- argument, so the left-facing hero needs its own set).
@@ -76,11 +65,5 @@ end
 
 --- Draw the hero standing on groundY, centred on px.
 function Hero.draw(px, groundY, moving, t, face)
-	local mirror = (face or 1) < 0
-	if Hero.RUNTIME and Assets.heroParts and HeroRig then
-		drawRig(px, groundY, moving, t, mirror)
-	else
-		drawBaked(px, groundY, moving, t,
-			mirror and gfx.kImageFlippedX or gfx.kImageUnflipped)
-	end
+	drawRig(px, groundY, moving, t, (face or 1) < 0)
 end

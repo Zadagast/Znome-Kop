@@ -8,10 +8,9 @@ local SCENES <const> = { "lab", "colony", "flats", "canyon" }
 
 function Assets.load()
 	Assets.znomes = gfx.imagetable.new("images/znomes")
-	Assets.hero = gfx.imagetable.new("images/hero")
 	Assets.heroine = gfx.imagetable.new("images/heroine")
 	Assets.heroParts = gfx.imagetable.new("images/heroparts")
-	assert(Assets.znomes and Assets.hero and Assets.heroine and Assets.heroParts,
+	assert(Assets.znomes and Assets.heroine and Assets.heroParts,
 		"missing image tables")
 	Assets.scenes = {}
 	for _, name in ipairs(SCENES) do

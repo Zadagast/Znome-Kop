@@ -2,12 +2,12 @@
 -- Offsets are in pixels from the character's feet-center anchor.
 
 HeroRig = {
-	height = 96,
+	height = 108,
 	frames = { head = 1, torso = 2, arm = 3, leg = 4 },
-	head = { x = 3, y = -79 },
-	torso = { x = 0, y = -51 },
-	arm = { x = 0, y = -63 },
-	leg = { x = 0, y = -39 },
-	hipSpread = 2,
-	shoulderSpread = 2,
+	head = { x = 3, y = -87 },
+	torso = { x = 0, y = -53 },
+	arm = { x = 0, y = -68 },
+	leg = { x = 0, y = -38 },
+	hipSpread = 3,
+	shoulderSpread = 5,
 }

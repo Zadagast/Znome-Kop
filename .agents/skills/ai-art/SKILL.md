@@ -19,17 +19,32 @@ can produce matching assets by following this contract.
    `source/scripts/game/sidescroller.lua`; new character sheets need a
    `sheet(...)` call in `tools/ai_convert.py`.
 
-## Character part sheet contract (preferred: rig-baked animation)
+## Character part sheet contract (the hero rig)
 
-The hero is animated from a paper-doll part sheet baked by
-`python3 tools/ai_rig.py` (rotates limbs around pivots at raw resolution,
-so all frames are the exact same art). Raw file:
-`tools/ai_raw/gen_male_parts.png` — a 1024x1024 2x2 grid on solid magenta
-`#FF00FF`, side view facing right, consistent scale, one part per cell:
-top-left head (helmet + neck stub), top-right torso (shoulders/hips flat,
-no head/arms/legs), bottom-left one arm (shoulder to hand, vertical),
-bottom-right one leg (hip to boot, vertical). Output table: frame 1 idle +
-6 walk frames.
+The hero is not a drawn walk cycle: one character is drawn once as four
+parts and the game rotates them every frame. Raw file
+`tools/ai_raw/gen_male_parts_px.png`, built by `python3 tools/ai_rig.py`,
+previewed off-device with `python3 tools/rig_preview.py`.
+
+Prompt contract — 1024x1024, 2x2 grid on solid magenta `#FF00FF`, nothing
+else in the image (no ground line, labels or grid lines):
+
+- **True low-resolution pixel art**: large visible square pixel blocks
+  (~22 screen px each), hard aligned edges, no anti-aliasing, blur,
+  gradients or dithering. Pure black and pure white only. This matters:
+  the converter snaps each cell onto its pixel grid by majority vote, so
+  nothing is ever resampled and the art stays crisp. Smooth painted art
+  downscales into mush and nubby outlines.
+- Same character in every cell, side view facing right, matching scale.
+- top-left head only (helmet, face, hair, small neck stub, ~22 blocks
+  tall); top-right torso only (chest, belt, backpack; flat shoulders and
+  hips; no head/arms/legs; ~24 tall, ~14 wide); bottom-left one arm,
+  vertical, shoulder to glove (~24 tall, 5 wide); bottom-right one leg,
+  vertical, hip to boot (~30 tall, 7 wide).
+
+`tools/ai_rig.py` writes `source/images/heroparts-table-*.png` plus the
+generated pivot offsets in `source/scripts/game/herorig.lua`;
+`source/scripts/game/hero.lua` composes them at runtime.
 
 ## Character sheet contract (legacy: pre-drawn frames)
 

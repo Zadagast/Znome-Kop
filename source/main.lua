@@ -38,19 +38,11 @@ Assets.load()
 gfx.setBackgroundColor(gfx.kColorWhite)
 Scenes.replace(TitleScene.new())
 
--- Dev toggles: compare the live limb rig against the baked walk frames and
--- watch the frame time while doing it (the device is far slower than the
--- simulator).
+-- The hero rig rotates six limb images per frame; the device is far slower
+-- than the simulator, so keep a frame-rate readout one menu click away.
 SHOW_FPS = false
-do
-	local menu = playdate.getSystemMenu()
-	menu:addCheckmarkMenuItem("live rig", Hero.RUNTIME, function(on)
-		Hero.RUNTIME = on
-	end)
-	menu:addCheckmarkMenuItem("show fps", SHOW_FPS, function(on)
-		SHOW_FPS = on
-	end)
-end
+playdate.getSystemMenu():addCheckmarkMenuItem("show fps", SHOW_FPS,
+	function(on) SHOW_FPS = on end)
 
 function playdate.update()
 	Scenes.update()

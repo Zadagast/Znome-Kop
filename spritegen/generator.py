@@ -266,9 +266,38 @@ def _touching(g1, g2):
     return False
 
 
+def _upscale(grid, w, h, factor, smooth):
+    """Redraw the CA grid at `factor` times the resolution and let a
+    majority filter round its contours.  The silhouette survives (the
+    creature is recognisably the same seed) but every edge, hole and
+    shading step is resolved on a finer grid, so the sprite carries real
+    detail instead of bigger blocks."""
+    fw, fh = w * factor, h * factor
+    fine = [[grid[x // factor][y // factor] for y in range(fh)]
+            for x in range(fw)]
+    for _ in range(smooth):
+        out = [col[:] for col in fine]
+        for x in range(fw):
+            for y in range(fh):
+                n = 0
+                for i in (-1, 0, 1):
+                    for j in (-1, 0, 1):
+                        if i == 0 and j == 0:
+                            continue
+                        xx, yy = x + i, y + j
+                        if 0 <= xx < fw and 0 <= yy < fh and fine[xx][yy]:
+                            n += 1
+                if fine[x][y] and n < DEATH_LIMIT:
+                    out[x][y] = False
+                elif not fine[x][y] and n > BIRTH_LIMIT - 1:
+                    out[x][y] = True
+        fine = out
+    return fine, fw, fh
+
+
 def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
                h=None, fill=0.48, walks=2, walk_len=100, ca_steps=N_STEPS,
-               eyes=None):
+               eyes=None, detail=1, smooth=2):
     """Returns a flat list of ((x, y), color) cells; color is an rgb
     tuple, 'outline', or ('eye', rgb) for darkened eye-centre cells.
 
@@ -277,14 +306,14 @@ def get_sprite(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
     retune its parameters."""
     cells = []
     for g in get_groups(seed, size, n_colors, outline, w, h, fill, walks,
-                        walk_len, ca_steps, eyes):
+                        walk_len, ca_steps, eyes, detail, smooth):
         cells.extend(g["cells"])
     return cells
 
 
 def get_groups(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
                h=None, fill=0.48, walks=2, walk_len=100, ca_steps=N_STEPS,
-               eyes=None):
+               eyes=None, detail=1, smooth=2):
     """Like get_sprite but keeps the flood-fill groups separate, the way
     the generator's Godot drawer does: each connected part is its own
     group so it can be animated independently.  Valid negative groups
@@ -295,6 +324,8 @@ def get_groups(seed, size=30, n_colors=N_COLORS, outline=True, w=None,
     h = h or size
     grid = _generate_new(rng, w, h, fill, walks, walk_len)
     grid = _do_steps(grid, w, h, ca_steps)
+    if detail > 1:
+        grid, w, h = _upscale(grid, w, h, detail, smooth)
     scheme = _generate_new_colorscheme(rng, n_colors)
     eye_scheme = _generate_new_colorscheme(rng, n_colors)
     groups, negative_groups = _fill_colors(

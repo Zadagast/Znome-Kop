@@ -47,16 +47,19 @@ class Canvas:
 
 
 def render_frames(seed, out_w, out_h, cell=2, frames=4, dark=False,
-                  **knobs):
+                  detail=1, **knobs):
     """Render a generated creature as idle-animation frames.
 
     Each connected part bobs on its own sine phase (one cell of
     amplitude), sliding over its neighbours like the generator's
-    animated showcase.  Cells are drawn as cell x cell blocks; tones
+    animated showcase.  `detail` grows the creature on a finer grid (see
+    get_groups), so detail=3 with cell=1 is the same size as detail=1
+    with cell=3 but carries three times the contour and shading
+    resolution.  Cells are drawn as cell x cell blocks; tones
     are luminance-quantized to ordered dither (dark=True inverts to a
     mostly-black creature).  Returns a list of Canvas frames,
     bottom-centre aligned."""
-    groups = get_groups(seed, **knobs)
+    groups = get_groups(seed, detail=detail, **knobs)
     if not groups:
         return [Canvas(out_w, out_h) for _ in range(frames)]
 
@@ -75,7 +78,8 @@ def render_frames(seed, out_w, out_h, cell=2, frames=4, dark=False,
     min_y = min(p[1] for p in all_pts)
     max_y = max(p[1] for p in all_pts)
     ox = (out_w - (max_x - min_x + 1) * cell) // 2 - min_x * cell
-    oy = out_h - cell - (max_y + 2) * cell  # bottom-aligned, wobble margin
+    # bottom-aligned, leaving the wobble amplitude as margin
+    oy = out_h - (max_y + 2 + detail) * cell
 
     # big parts drawn first so small parts slide over them
     order = sorted(range(len(groups)),
@@ -85,7 +89,7 @@ def render_frames(seed, out_w, out_h, cell=2, frames=4, dark=False,
         c = Canvas(out_w, out_h)
         for gi in order:
             g = groups[gi]
-            amp = 1
+            amp = detail
             phase = gi * 2.399
             dy = round(amp * math.sin(2 * math.pi * f / frames + phase))
             for (x, y), col in g["cells"]:

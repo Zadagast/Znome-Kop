@@ -19,12 +19,13 @@ can produce matching assets by following this contract.
    `source/scripts/game/sidescroller.lua`; new character sheets need a
    `sheet(...)` call in `tools/ai_convert.py`.
 
-## Character part sheet contract (the hero rig)
+## Character part sheet contract (every character is a rig)
 
-The hero is not a drawn walk cycle: one character is drawn once as four
-parts and the game rotates them every frame. Raw file
-`tools/ai_raw/gen_male_parts_px.png`, built by `python3 tools/ai_rig.py`,
-previewed off-device with `python3 tools/rig_preview.py`.
+Nobody is a drawn walk cycle: each character is drawn once as four parts
+and the game rotates them every frame. Raw files
+`tools/ai_raw/gen_<role>_parts_px.png`, listed in `CHARACTERS` in
+`tools/ai_rig.py`, built with `python3 tools/ai_rig.py` and previewed
+off-device with `python3 tools/rig_preview.py <character>`.
 
 Prompt contract — 1024x1024, 2x2 grid on solid magenta `#FF00FF`, nothing
 else in the image (no ground line, labels or grid lines):
@@ -42,9 +43,19 @@ else in the image (no ground line, labels or grid lines):
   vertical, shoulder to glove (~24 tall, 5 wide); bottom-right one leg,
   vertical, hip to boot (~30 tall, 7 wide).
 
-`tools/ai_rig.py` writes `source/images/heroparts-table-*.png` plus the
-generated pivot offsets in `source/scripts/game/herorig.lua`;
-`source/scripts/game/hero.lua` composes them at runtime.
+**New characters: edit the hero sheet, don't prompt from scratch.** Pass
+`tools/ai_raw/gen_male_parts_px.png` as an input image and ask for the
+identity to change (face, suit, gloves, boots) while keeping every part's
+silhouette, size and cell position identical. Sheets prompted from
+scratch come back with their own proportions and look goofy next to the
+hero even after height normalisation.
+
+`tools/ai_rig.py` writes `source/images/<name>parts-table-*.png` per
+character plus all the pivot offsets in `source/scripts/game/rigs.lua`,
+normalising everyone to `BODY_H` px tall by re-snapping on a scaled grid.
+`source/scripts/game/rig.lua` composes them at runtime: `Rig.draw(name,
+px, groundY, moving, t, face)`; standing characters breathe, walking ones
+scissor their legs and swing their arms.
 
 ## Character sheet contract (legacy: pre-drawn frames)
 

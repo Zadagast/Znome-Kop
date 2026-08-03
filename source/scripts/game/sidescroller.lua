@@ -19,7 +19,7 @@ local ROOMS = {
 		exits = { right = "colony" },
 		npcs = {
 			{
-				sprite = "heroine",
+				rig = "doc",
 				x = 300,
 				onTalk = function(game)
 					if #game.party == 0 then
@@ -45,6 +45,36 @@ local ROOMS = {
 		name = "HELLAS COLONY",
 		exits = { left = "lab", right = "flats" },
 		gate = "right",
+		npcs = {
+			{
+				rig = "engineer",
+				x = 110,
+				lines = {
+					"Rigger: Dome seals are holding.",
+					"Barely. Don't lean on them.",
+				},
+			},
+			{
+				rig = "security",
+				x = 300,
+				onTalk = function(game)
+					if #game.party == 0 then
+						return {
+							lines = {
+								"Kop Warden: No pod, no gate.",
+								"See Doc back in the lab.",
+							},
+						}
+					end
+					return {
+						lines = {
+							"Kop Warden: Flats are crawling today.",
+							"Log everything you scan out there.",
+						},
+					}
+				end,
+			},
+		},
 	},
 	flats = {
 		bg = "flats",
@@ -269,13 +299,13 @@ function SideScroller:draw()
 	local bg = Assets.scenes[self.room.bg]
 	bg:draw(0, 0)
 
+	-- NPCs stand still and turn to face the player
 	for _, npc in ipairs(self.room.npcs or {}) do
-		local img = Assets.heroine:getImage(1)
-		local w, h = img:getSize()
-		img:draw(npc.x - w // 2, GROUND_Y - h)
+		Rig.draw(npc.rig, npc.x, GROUND_Y, false, self.t,
+			game.px < npc.x and -1 or 1)
 	end
 
-	Hero.draw(game.px, GROUND_Y, self.moving, self.t, game.face)
+	Rig.draw("hero", game.px, GROUND_Y, self.moving, self.t, game.face)
 
 	if self.transition then
 		local t = 8 - self.transition.timer

@@ -10,9 +10,10 @@ Raw assets are generated with a frontier image model (see
 This script is the deterministic half of the pipeline (chroma-key,
 crop, downscale, 1-bit threshold, halo, sheet assembly):
 
-  hero-table-<w>-<h>.png   male model, 4 frames
-  heroine-table-<w>-<h>.png female model, 4 frames
   scenes/scene-*.png       400x240 1-bit backdrops
+
+Characters are not drawn as frames any more: they are part rigs built by
+tools/ai_rig.py.
 
 Requires Pillow.  Run: python3 tools/ai_convert.py
 """
@@ -157,8 +158,7 @@ def scene(src, name):
 
 def main():
     os.makedirs(os.path.join(IMAGES, "scenes"), exist_ok=True)
-    # hero comes from the part rig: python3 tools/ai_rig.py
-    sheet(extract_cells(os.path.join(RAW, "gen_female_sheet.png")), "heroine")
+    # characters come from the part rigs: python3 tools/ai_rig.py
     scene("world_lab.png", "lab")
     scene("world_colony.png", "colony")
     scene("world_flats.png", "flats")

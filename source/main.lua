@@ -23,8 +23,8 @@ import "scripts/game/creature"
 import "scripts/game/battle"
 import "scripts/game/state"
 import "scripts/game/scenes"
-import "scripts/game/herorig"
-import "scripts/game/hero"
+import "scripts/game/rigs"
+import "scripts/game/rig"
 import "scripts/game/sidescroller"
 import "scripts/game/battlescene"
 import "scripts/game/menus"
@@ -38,7 +38,7 @@ Assets.load()
 gfx.setBackgroundColor(gfx.kColorWhite)
 Scenes.replace(TitleScene.new())
 
--- The hero rig rotates six limb images per frame; the device is far slower
+-- Each character rig rotates six limb images per frame; the device is far slower
 -- than the simulator, so keep a frame-rate readout one menu click away.
 SHOW_FPS = false
 playdate.getSystemMenu():addCheckmarkMenuItem("show fps", SHOW_FPS,

@@ -1,8 +1,8 @@
-"""Preview the runtime hero rig exactly as source/scripts/game/hero.lua
+"""Preview a runtime character rig exactly as source/scripts/game/rig.lua
 draws it (same offsets, same angles), so the live rig can be checked
 without the Playdate simulator.
 
-    python3 tools/rig_preview.py [out.gif]
+    python3 tools/rig_preview.py [character] [out.gif]
 """
 
 import glob
@@ -15,17 +15,17 @@ from PIL import Image
 
 from ai_convert import IMAGES, ROOT
 
-RIG_LUA = os.path.join(ROOT, "source", "scripts", "game", "herorig.lua")
+RIG_LUA = os.path.join(ROOT, "source", "scripts", "game", "rigs.lua")
 ORDER = {"head": 1, "torso": 2, "arm": 3, "leg": 4}
 
 
-def load_rig():
-    txt = open(RIG_LUA).read()
+def load_rig(name="hero"):
+    txt = open(RIG_LUA).read().split("\t%s = {" % name)[1].split("\t},")[0]
     offs = {k: (int(a), int(b)) for k, a, b in
             re.findall(r"(\w+) = \{ x = (-?\d+), y = (-?\d+) \}", txt)}
     spread = {k: int(v) for k, v in
               re.findall(r"(hipSpread|shoulderSpread) = (-?\d+)", txt)}
-    table = glob.glob(os.path.join(IMAGES, "heroparts-table-*.png"))[0]
+    table = glob.glob(os.path.join(IMAGES, name + "parts-table-*.png"))[0]
     cw, ch = (int(v) for v in re.findall(r"-(\d+)-(\d+)\.png", table)[0])
     img = Image.open(table)
     cells = [img.crop((i * cw, 0, (i + 1) * cw, ch)) for i in range(4)]
@@ -71,8 +71,9 @@ def frame(offs, spread, cells, phase):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else "/tmp/rig_runtime.gif"
-    offs, spread, cells = load_rig()
+    name = sys.argv[1] if len(sys.argv) > 1 else "hero"
+    out = sys.argv[2] if len(sys.argv) > 2 else "/tmp/rig_%s.gif" % name
+    offs, spread, cells = load_rig(name)
     n = 12
     frames = [frame(offs, spread, cells, i / n * 2 * math.pi) for i in range(n)]
     frames[0].save(out, save_all=True, append_images=frames[1:],

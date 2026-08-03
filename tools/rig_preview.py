@@ -47,7 +47,7 @@ def frame(offs, spread, cells, phase):
     s = math.sin(phase)
     leg_a, arm_a = 24 * s, -18 * s
     bob = -1 if abs(math.cos(phase)) < 0.5 else 0
-    w, h, ground, px = 120, 110, 100, 60
+    w, h, ground, px = 140, 130, 118, 70
     canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 
     def place(part, dx, angle):
@@ -67,7 +67,7 @@ def frame(offs, spread, cells, phase):
     place("arm", sh, arm_a)
     flat = Image.new("RGB", (w, h), (140, 140, 140))
     flat.paste(canvas, (0, 0), canvas)
-    return flat.resize((w * 3, h * 3), Image.NEAREST)
+    return flat.resize((w * 2, h * 2), Image.NEAREST)
 
 
 def main():

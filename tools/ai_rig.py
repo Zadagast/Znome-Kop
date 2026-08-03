@@ -151,17 +151,22 @@ def part_bitmap(part, scale):
         for x in range(pw):
             if not mask[y][x]:
                 continue
+            # 2px silhouette outline: any pixel within one step of the
+            # outside, so limbs stay separable when they overlap
             edge = any(not (0 <= x + dx < pw and 0 <= y + dy < ph
                             and mask[y + dy][x + dx])
-                       for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
-            black = small[x, y] < 100 or (small[x, y] < 200 and dark[x, y] < 60)
+                       for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2)
+                       if abs(dx) + abs(dy) <= 2)
+            # only strong interior lines survive; faint shading is dropped
+            black = small[x, y] < 80 or (small[x, y] < 160 and dark[x, y] < 40)
             op[x, y] = (0, 0, 0, 255) if (edge or black) \
                 else (255, 255, 255, 255)
     return out
 
 
 def anchored(img, ax, ay):
-    """Pad so (ax, ay) sits exactly at the image center, for drawRotated."""
+    """Pad so (ax, ay) sits at the image center and the part still fits when
+    rotated about it (square canvas of the swing radius)."""
     w, h = img.size
     left = max(0, round(w - 2 * ax))
     right = max(0, round(2 * ax - w))
@@ -169,7 +174,10 @@ def anchored(img, ax, ay):
     bottom = max(0, round(2 * ay - h))
     out = Image.new("RGBA", (w + left + right, h + top + bottom), (0, 0, 0, 0))
     out.paste(img, (left, top), img)
-    return out
+    side = max(out.size) + 2
+    square = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    square.paste(out, ((side - out.width) // 2, (side - out.height) // 2), out)
+    return square
 
 
 def export_parts(src, name):
@@ -186,8 +194,10 @@ def export_parts(src, name):
     s = SPRITE_H / body_h
 
     parts = {
+        # head seats into the collar: its base overlaps the torso top
         "head": (part_bitmap(head, s), head.width / 2, head.height / 2,
-                 torso.width * 0.10, torso_y + head.height * 0.5 - head.height),
+                 torso.width * 0.10,
+                 torso_y - head.height * 0.5 + head.height * 0.12),
         "torso": (part_bitmap(torso, s), torso.width / 2, torso.height / 2,
                   0.0, torso_y + th * 0.5),
         "arm": (part_bitmap(arm, s), arm.width / 2, arm.height * 0.08,

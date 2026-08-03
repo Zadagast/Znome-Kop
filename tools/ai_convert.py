@@ -25,7 +25,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "tools", "ai_raw")
 IMAGES = os.path.join(ROOT, "source", "images")
 
-SPRITE_H = 72  # body height before 1px halo padding
+SPRITE_H = 96  # body height before 1px halo padding
 BLACK = 120  # luminance threshold for interior black detail
 
 

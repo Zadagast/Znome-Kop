@@ -7,7 +7,7 @@ Outputs (all committed so the game builds without Python):
     source/images/tiles-table-32-32.png
     source/images/actors-table-32-32.png
     source/images/znomes-table-96-96.png
-    source/images/znomesbig-table-126-126.png
+    source/images/znomesbig-table-132-132.png
     source/scripts/world/atlas.lua
 """
 

@@ -16,8 +16,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from spritegen import render_frames
 
-SIZE = 96           # menus, kodex, title: 2px cells
-BATTLE_SIZE = 126   # battle: same creatures at 3x grid detail, 1px cells
+SIZE = 96           # menus, kodex, title: 2x grid detail, 1px cells
+DETAIL = 2
+BATTLE_SIZE = 132   # battle: same creatures at 3x grid detail, 1px cells
 BATTLE_DETAIL = 3
 FRAMES = 4
 
@@ -45,8 +46,10 @@ def _frames(seed, dark, knobs, size, cell=2, detail=1):
                          frames=FRAMES, dark=dark, **knobs)
 
 
-ZNOMES = [(name, lambda s=seed, d=dark, k=knobs: _frames(s, d, k, SIZE))
-          for name, seed, dark, knobs in SPECIES]
+ZNOMES = [
+    (name, lambda s=seed, d=dark, k=knobs: _frames(s, d, k, SIZE, 1, DETAIL))
+    for name, seed, dark, knobs in SPECIES
+]
 
 ZNOMES_BATTLE = [
     (name, lambda s=seed, d=dark, k=knobs: _frames(s, d, k, BATTLE_SIZE,

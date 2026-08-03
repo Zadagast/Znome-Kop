@@ -227,16 +227,16 @@ function BattleScene:draw()
 	-- ground shading strips, GB battle style
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setDitherPattern(0.75, gfx.image.kDitherTypeBayer4x4)
-	gfx.fillRect(202, 116, 190, 8)
-	gfx.fillRect(6, 162, 190, 8)
+	gfx.fillRect(202, 112, 190, 8)
+	gfx.fillRect(6, 164, 190, 8)
 	gfx.setColor(gfx.kColorBlack)
 
 	local shakeX = (self.shake > 0) and ((self.shake // 3) % 2 == 0 and 2 or -2) or 0
 	local frame = (self.anim // 8) % Atlas.znomeFrames + 1
 	local foeImg = Assets.znomeFrame(b.foe.creature.species, frame, true)
-	foeImg:draw(262 + shakeX, 0)
+	foeImg:draw(259 + shakeX, -12)
 	local myImg = Assets.znomeFrame(b.player.creature.species, frame + 2, true)
-	myImg:draw(10, 44)
+	myImg:draw(8, 40)
 
 	UI.statusPlate(8, 8, b.foe.creature, false, self.hpShown.foe)
 	UI.statusPlate(236, 124, b.player.creature, true, self.hpShown.player)

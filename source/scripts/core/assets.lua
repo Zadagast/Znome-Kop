@@ -8,6 +8,7 @@ local SCENES <const> = { "lab", "colony", "flats", "canyon" }
 
 function Assets.load()
 	Assets.znomes = gfx.imagetable.new("images/znomes")
+	Assets.znomesBig = gfx.imagetable.new("images/znomesbig")
 	Assets.rigs = {}
 	for name in pairs(Rigs) do
 		if name ~= "frames" then
@@ -15,7 +16,7 @@ function Assets.load()
 			assert(Assets.rigs[name], "missing rig parts: " .. name)
 		end
 	end
-	assert(Assets.znomes, "missing image tables")
+	assert(Assets.znomes and Assets.znomesBig, "missing image tables")
 	Assets.scenes = {}
 	for _, name in ipairs(SCENES) do
 		local img = gfx.image.new("images/scenes/scene-" .. name)
@@ -29,8 +30,10 @@ function Assets.znomeImage(speciesId)
 	return Assets.znomes:getImage(Atlas.znomeSprite[def.sprite])
 end
 
---- Idle-animation frame (1..Atlas.znomeFrames) for a species.
-function Assets.znomeFrame(speciesId, frame)
+--- Idle-animation frame (1..Atlas.znomeFrames) for a species. Battle uses
+--- the bigger render of the same sprites; menus the small one.
+function Assets.znomeFrame(speciesId, frame, big)
 	local def = Species.get(speciesId)
-	return Assets.znomes:getImage(Atlas.znomeSprite[def.sprite] + (frame - 1) % Atlas.znomeFrames)
+	local table_ = big and Assets.znomesBig or Assets.znomes
+	return table_:getImage(Atlas.znomeSprite[def.sprite] + (frame - 1) % Atlas.znomeFrames)
 end

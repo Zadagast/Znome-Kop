@@ -7,6 +7,7 @@ Outputs (all committed so the game builds without Python):
     source/images/tiles-table-32-32.png
     source/images/actors-table-32-32.png
     source/images/znomes-table-96-96.png
+    source/images/znomesbig-table-126-126.png
     source/scripts/world/atlas.lua
 """
 
@@ -18,7 +19,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from art_tiles import (
     GROUND_TILES, OBJECT_TILES, STRUCTURES, T, panel,
 )
-from art_znomes import FRAMES as ZNOME_FRAMES, SIZE as ZNOME_SIZE, ZNOMES
+from art_znomes import (
+    BATTLE_SIZE as ZNOME_BATTLE_SIZE, FRAMES as ZNOME_FRAMES,
+    SIZE as ZNOME_SIZE, ZNOMES, ZNOMES_BATTLE,
+)
 from canvas import (
     BLACK, CLEAR, WHITE, Canvas, dither_at, from_ascii, from_png, write_sheet,
 )
@@ -159,8 +163,19 @@ def main():
     for _, fn in ZNOMES:
         znome_frames.extend(fn())
     write_sheet(
-        os.path.join(IMAGES, "znomes-table-96-96.png"),
+        os.path.join(IMAGES, "znomes-table-%d-%d.png" % (ZNOME_SIZE,
+                                                         ZNOME_SIZE)),
         znome_frames, ZNOME_FRAMES, ZNOME_SIZE, ZNOME_SIZE,
+    )
+
+    # battle uses its own bigger render of the same seeds
+    battle_frames = []
+    for _, fn in ZNOMES_BATTLE:
+        battle_frames.extend(fn())
+    write_sheet(
+        os.path.join(IMAGES, "znomesbig-table-%d-%d.png" % (
+            ZNOME_BATTLE_SIZE, ZNOME_BATTLE_SIZE)),
+        battle_frames, ZNOME_FRAMES, ZNOME_BATTLE_SIZE, ZNOME_BATTLE_SIZE,
     )
 
     build_launcher(znome_frames)
